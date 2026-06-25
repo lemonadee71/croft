@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependency directories
+.pnp/
+.pnp.js
+
+# Build output
+dist/
+build/
+coverage/
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+
+# Optional npm cache directory
+.npm
+
+# pnpm store
+.pnpm-store/
+
+# OS files
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+
+# Test output
+coverage/
+
+# Misc
+.env
+.env.local
+.env.*.local
