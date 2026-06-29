@@ -9,6 +9,7 @@ describe("createHook", () => {
   it("returned Proxy is sealed", () => {
     expect(() => {
       const state = createHook({ test: 1 });
+      // @ts-ignore testing seal behavior
       state.prop = "test";
     }).toThrowError();
   });
@@ -89,7 +90,8 @@ describe("hook", () => {
 
     subject.value = "Shin";
     greeting.value = "Hello";
-    name.value = html`<i>Pam:</i>`;
+    // @ts-ignore runtime dynamic type change
+    name.value = html`<i>Pam:</i>` as any;
 
     expect(getTarget()).toHaveTextContent("Pam: Hello, Shin!");
   });
@@ -195,6 +197,7 @@ describe("method forwarding", () => {
     const forwarded = state.$value.toUpperCase();
 
     expect(state.value).toBe("abc");
-    expect(forwarded.data.value).toBe("abc");
+    // @ts-ignore forwarded is HookRef at runtime
+    expect((forwarded as any).data.value).toBe("abc");
   });
 });

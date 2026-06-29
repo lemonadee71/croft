@@ -1,11 +1,3 @@
-import {
-  isPlainObject,
-  isFunction,
-  isString,
-  isArray,
-  isNumber as isNumberLib,
-  isObject as isObjectLib,
-} from "is-what";
 import { createHook } from "./hooks";
 
 export const HOOK_TARGET = Symbol.for("peasant_hook_target");
@@ -58,12 +50,26 @@ export class Template {
 export const isNullOrUndefined = (value: any): value is null | undefined =>
   value === null || value === undefined;
 
-export const isObject = (value: any): value is object => isObjectLib(value);
+export const isObject = (value: any): value is object =>
+  typeof value === 'object' && value !== null;
 
-export { isFunction, isString, isArray, isPlainObject };
+export const isFunction = (value: any): value is Function =>
+  typeof value === 'function';
+
+export const isString = (value: any): value is string =>
+  typeof value === 'string';
+
+export const isArray = (value: any): value is any[] =>
+  Array.isArray(value);
+
+export const isPlainObject = (value: any): value is Record<string, any> => {
+  if (typeof value !== 'object' || value === null) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === null || proto === Object.prototype;
+};
 
 export const isNumber = (value: any): value is number =>
-  isNumberLib(value) && !Number.isNaN(value);
+  typeof value === 'number' && !Number.isNaN(value);
 
 export const isNode = (value: any): value is Node => value instanceof Node;
 

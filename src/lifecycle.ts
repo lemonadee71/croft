@@ -1,4 +1,4 @@
-import { isArray, compose, traverse, inTheDocument } from "./utils";
+import { traverse, inTheDocument } from "./utils";
 
 export interface LifecycleHooks {
   beforeCreate: Function[];

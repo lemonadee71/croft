@@ -30,7 +30,7 @@ describe("addDirective", () => {
   const attrName = (str: string) => str === ":autosize";
   const objKey = (str: string) => str === "autosize";
 
-  const runAssertions = (id = "") => {
+  const runAssertions = (id: string | number = "") => {
     expect(screen.getByTestId(`autosize${id}`)).not.toHaveAttribute(":autosize");
     expect(screen.getByTestId(`autosize${id}`)).toHaveAttribute("data-autosize", "true");
   };

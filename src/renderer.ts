@@ -24,7 +24,6 @@ import {
   traverse,
   getPlaceholderId,
   getPlaceholders,
-  getBoundary,
   createMarkers,
   isElement,
   isSVG,
@@ -59,9 +58,12 @@ export const html = (fragments: TemplateStringsArray, ...values: any[]): Templat
     return escapeHTML(`${value}`);
   });
 
-  const templateString = replacedValues
+  let templateString = replacedValues
     .reduce((full, str, i) => `${full}${str}${fragments[i + 1]}`, fragments[0])
     .trim();
+
+  // Avoid duplicate class attributes: transform class=PLACEHOLDER to :_class=PLACEHOLDER
+  templateString = templateString.replace(/\bclass=(__\w+__)/g, ":_class=$1");
 
   return new Template(templateString, mappedValues);
 };

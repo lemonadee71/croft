@@ -161,7 +161,7 @@ export const BuiltinDirectives: RegistryEntry[] = [
   {
     type: "class",
     predicate: {
-      attrName: (key) => key === "class" && ["class", key],
+      attrName: (key) => (key === "class" || key === ":_class") && ["class", key],
       objKey: (key) => key === "class" && ["class", key],
     },
     callback: (element, data, modify) => {
@@ -407,7 +407,7 @@ export const BuiltinDirectives: RegistryEntry[] = [
       objKey: (key) => key === "_show" && ["show", key],
     },
     callback: (element, data) => {
-      let display = element.__meta?.og_display;
+      let display = (element as any).__meta?.og_display;
 
       if (!display) {
         display = window.getComputedStyle(element).display;
