@@ -1,57 +1,62 @@
-import { HOOK_REF, isHook, isPlainObject, compose, resolve, uid } from "./utils";
-import { modifyElement } from "./index";
+import { HOOK_TARGET, isHook, isPlainObject, compose } from "./utils";
 
-interface Handler {
-  type: string;
-  linkedProp: string;
-  targetAttr: any;
-  action: Function | null;
-}
+export type HookRef<V> = {
+  // Mapping / transform function
+  <R>(transform: (val: V) => R): HookRef<R>;
+  (): HookRef<V>;
+} & {
+  // Method and property forwarding
+  [P in keyof V]: V[P] extends (...args: infer A) => infer R
+    ? (...args: A) => HookRef<R>
+    : HookRef<V[P]>;
+};
+
+export type HookState<T> = T & {
+  [P in keyof T as `$${Extract<P, string>}`]: HookRef<T[P]>;
+};
+
+type NormalizedState<T> = T extends any[] ? { value: T } : T extends object ? T : { value: T };
 
 interface HookData {
-  subscribers: Map<string, Handler[]>;
-  observers: Map<string, Function[]>;
+  listeners: Map<string, Set<Function>>;
 }
 
-const Registry = new WeakMap<object, HookData>();
+const HookRegistry = new WeakMap<object, HookData>();
 
-export const createHook = <T extends object | string | number | boolean | any[]>(
-  value: T,
-  seal = true
-): any => {
+export const createHook = <T extends any>(value: T, seal = true): HookState<NormalizedState<T>> => {
   let obj: any = isPlainObject(value) ? value : { value };
   obj = seal ? Object.seal(obj) : obj;
 
-  Registry.set(obj, { subscribers: new Map(), observers: new Map() });
+  HookRegistry.set(obj, { listeners: new Map() });
 
-  return new Proxy(obj, { get: getter, set: setter });
+  return new Proxy(obj, { get: getter, set: setter }) as any;
 };
 
 const methodForwarder = (target: any, prop: string | symbol): any => {
-  const previousTrap = target.data.trap || ((val: any) => val);
+  const previousTransform = target.data.transform || ((val: any) => val);
 
   const callback = (...args: any[]) => {
     const copy = {
-      [HOOK_REF]: target[HOOK_REF],
+      [HOOK_TARGET]: target[HOOK_TARGET],
       data: {
         ...target.data,
-        trap: compose(previousTrap, (value: any) => value[prop](...args)),
+        transform: compose(previousTransform, (value: any) => value[prop](...args)),
       },
     };
 
     return new Proxy(copy, { get: methodForwarder });
   };
 
-  if ([HOOK_REF, "data"].includes(prop as string)) return target[prop];
+  if (prop === HOOK_TARGET || prop === "data") return target[prop];
   return callback;
 };
 
-const createHookFunction = (ref: any, prop: string, value: any): any => {
-  const fn = (trap: any = null) => ({
-    [HOOK_REF]: ref,
+const createHookRef = (ref: any, prop: string, value: any): any => {
+  const fn = (transform: any = null) => ({
+    [HOOK_TARGET]: ref,
     data: {
       prop,
-      trap,
+      transform,
       value,
     },
   });
@@ -67,7 +72,7 @@ const getter = (target: any, rawProp: string | symbol, receiver: any): any => {
   const prop = rawProp.replace(/^\$/, "");
 
   if (rawProp.startsWith("$") && prop in target) {
-    return createHookFunction(target, prop, target[prop]);
+    return createHookRef(target, prop, target[prop]);
   }
 
   return Reflect.get(target, prop, receiver);
@@ -78,93 +83,51 @@ const setter = (target: any, prop: string | symbol, value: any, receiver: any): 
     return Reflect.set(target, prop, value, receiver);
   }
 
-  const data = Registry.get(target);
-  if (!data) {
-    return Reflect.set(target, prop, value, receiver);
-  }
-
-  const { subscribers, observers } = data;
-  const callbacks = observers.get(prop) || [];
-
-  for (const fn of callbacks) fn(value);
-
-  subscribers.forEach((handlers, id) => {
-    const element = document.querySelector(`[data-proxyid="${id}"]`);
-
-    if (element) {
-      handlers
-        .filter((handler) => handler.linkedProp === prop)
-        .forEach((handler) => {
-          modifyElement(element as HTMLElement, handler.type, {
-            key: handler.targetAttr,
-            value: resolve(value, handler.action),
-          });
-        });
-    } else {
-      subscribers.delete(id);
+  const data = HookRegistry.get(target);
+  if (data) {
+    const callbacks = data.listeners.get(prop);
+    if (callbacks) {
+      for (const fn of callbacks) {
+        fn(value);
+      }
     }
-  });
+  }
 
   return Reflect.set(target, prop, value, receiver);
 };
 
-export const registerIfHook = (
-  value: any,
-  options: { element: HTMLElement; type: string; target: any }
-): any => {
-  if (!isHook(value)) return value;
-
-  const hook = value;
-  const id = options.element.dataset.proxyid || uid();
-  options.element.dataset.proxyid = id;
-
-  if (["listener", "lifecycle"].includes(options.type)) {
-    throw new Error("You can't dynamically set lifecycle methods or event listeners");
-  }
-
-  const data = Registry.get(hook[HOOK_REF]);
-  if (!data) return resolve(hook.data.value, hook.data.trap);
-
-  const { subscribers } = data;
-  const handler: Handler = {
-    type: options.type,
-    linkedProp: hook.data.prop,
-    targetAttr: options.target,
-    action: hook.data.trap,
-  };
-
-  subscribers.set(id, [...(subscribers.get(id) || []), handler]);
-
-  // delete handlers when deleted
-  options.element.addEventListener("@destroy", () => subscribers.delete(id));
-
-  return resolve(hook.data.value, hook.data.trap);
-};
-
-export const watch = (value: any, ...callback: Function[]): (() => void) => {
+export const watch = (value: any, ...callbacks: Function[]): (() => void) => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
   const hook = value;
 
-  const data = Registry.get(hook[HOOK_REF]);
+  const data = HookRegistry.get(hook[HOOK_TARGET]);
   if (!data) throw new Error("Hook target registry entry not found");
 
-  const { observers } = data;
-  observers.set(hook.data.prop, [...(observers.get(hook.data.prop) || []), ...callback]);
+  const { listeners } = data;
+  const prop = hook.data.prop;
 
-  return () => unwatch(value, ...callback);
+  if (!listeners.has(prop)) {
+    listeners.set(prop, new Set());
+  }
+  const set = listeners.get(prop)!;
+  callbacks.forEach((cb) => set.add(cb));
+
+  return () => {
+    callbacks.forEach((cb) => set.delete(cb));
+  };
 };
 
-export const unwatch = (value: any, ...callback: Function[]): void => {
+export const unwatch = (value: any, ...callbacks: Function[]): void => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
   const hook = value;
 
-  const data = Registry.get(hook[HOOK_REF]);
+  const data = HookRegistry.get(hook[HOOK_TARGET]);
   if (!data) return;
 
-  const { observers } = data;
-  const currentObservers = observers.get(hook.data.prop) || [];
-  observers.set(
-    hook.data.prop,
-    currentObservers.filter((fn) => !callback.includes(fn))
-  );
+  const { listeners } = data;
+  const prop = hook.data.prop;
+  const set = listeners.get(prop);
+  if (set) {
+    callbacks.forEach((cb) => set.delete(cb));
+  }
 };

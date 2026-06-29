@@ -158,3 +158,43 @@ describe("observers", () => {
     expect(mock).toHaveBeenCalledWith(5);
   });
 });
+
+describe("method forwarding", () => {
+  it("supports primitive string method forwarding", () => {
+    const state = createHook("hello world");
+    render(html`<div data-target>${state.$value.toUpperCase()}</div>`);
+
+    expect(getTarget()).toHaveTextContent("HELLO WORLD");
+
+    state.value = "peasant jsx";
+    expect(getTarget()).toHaveTextContent("PEASANT JSX");
+  });
+
+  it("supports chaining method forwards", () => {
+    const state = createHook("  hello world  ");
+    render(html`<div data-target>${state.$value.trim().toUpperCase()}</div>`);
+
+    expect(getTarget()).toHaveTextContent("HELLO WORLD");
+
+    state.value = "  peasant  ";
+    expect(getTarget()).toHaveTextContent("PEASANT");
+  });
+
+  it("handles method arguments correctly", () => {
+    const state = createHook("foo-bar-baz");
+    render(html`<div data-target>${state.$value.replaceAll("-", " ")}</div>`);
+
+    expect(getTarget()).toHaveTextContent("foo bar baz");
+
+    state.value = "a-b-c";
+    expect(getTarget()).toHaveTextContent("a b c");
+  });
+
+  it("does not mutate the underlying state value", () => {
+    const state = createHook("abc");
+    const forwarded = state.$value.toUpperCase();
+
+    expect(state.value).toBe("abc");
+    expect(forwarded.data.value).toBe("abc");
+  });
+});

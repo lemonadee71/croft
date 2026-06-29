@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createEvent, fireEvent } from "@testing-library/dom";
-import { applyProps, html } from "../src";
+import { applyProps, html, createHook } from "../src";
 import { getTarget as target, renderToBody as render, setup, teardown, screen } from "./utils";
 
 const fn = vi.fn(() => true);
@@ -121,7 +121,10 @@ describe("style", () => {
 
     render(html`<div style=${style} data-target>Test</div>`);
 
-    expect(target()).toHaveStyle(style);
+    expect(target()).toHaveStyle({
+      color: "rgb(255, 0, 0)",
+      "background-color": "rgb(0, 0, 255)",
+    });
   });
 
   it("accepts an object that have camelCase keys instead of kebab-case", () => {
@@ -133,15 +136,19 @@ describe("style", () => {
 
     render(html`<div style=${style} data-target>Test</div>`);
 
-    expect(target()).toHaveStyle(style);
+    expect(target()).toHaveStyle({
+      color: "rgb(255, 0, 0)",
+      "font-size": "14px",
+      "background-color": "rgb(0, 0, 255)",
+    });
   });
 
   it("style:prop - sets a style property individually", () => {
     render(html`<div data-target style:color="red" style:background-color="blue"></div>`);
 
     expect(target()).toHaveStyle({
-      color: "red",
-      "background-color": "blue",
+      color: "rgb(255, 0, 0)",
+      "background-color": "rgb(0, 0, 255)",
     });
   });
 });
@@ -268,5 +275,30 @@ describe(":visible", () => {
     expect(target()).toHaveStyle({
       visibility: "hidden",
     });
+  });
+});
+
+describe("directives robustness", () => {
+  it("combines static classes, class object, and class:name directives correctly", () => {
+    const isError = createHook(false);
+    render(html`<div class="base-class" class=${{ active: true }} class:error=${isError.$value} data-target></div>`);
+
+    expect(target()).toHaveClass("base-class", "active");
+    expect(target()).not.toHaveClass("error");
+
+    isError.value = true;
+    expect(target()).toHaveClass("base-class", "active", "error");
+  });
+
+  it("handles toggle of multiple attributes at once", () => {
+    const isLocked = createHook(true);
+    render(html`<input data-target toggle:[disabled,readonly]=${isLocked.$value} />`);
+
+    expect(target()).toHaveAttribute("disabled", "");
+    expect(target()).toHaveAttribute("readonly", "");
+
+    isLocked.value = false;
+    expect(target()).not.toHaveAttribute("disabled");
+    expect(target()).not.toHaveAttribute("readonly");
   });
 });

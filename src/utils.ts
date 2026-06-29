@@ -1,4 +1,14 @@
-export const HOOK_REF = Symbol.for("ref_obj");
+import {
+  isPlainObject,
+  isFunction,
+  isString,
+  isArray,
+  isNumber as isNumberLib,
+  isObject as isObjectLib,
+} from "is-what";
+import { createHook } from "./hooks";
+
+export const HOOK_TARGET = Symbol.for("peasant_hook_target");
 
 export const PLACEHOLDER_REGEX = /__\S+__/;
 export const WRAPPING_BRACKETS = /^\[|\]$/g;
@@ -48,17 +58,12 @@ export class Template {
 export const isNullOrUndefined = (value: any): value is null | undefined =>
   value === null || value === undefined;
 
-export const isObject = (value: any): value is object =>
-  typeof value === "object" && value !== null;
+export const isObject = (value: any): value is object => isObjectLib(value);
 
-export const isFunction = (value: any): value is Function => typeof value === "function";
-
-export const isString = (value: any): value is string => typeof value === "string";
+export { isFunction, isString, isArray, isPlainObject };
 
 export const isNumber = (value: any): value is number =>
-  typeof value === "number" && !Number.isNaN(value);
-
-export const isArray = (value: any): value is any[] => Array.isArray(value);
+  isNumberLib(value) && !Number.isNaN(value);
 
 export const isNode = (value: any): value is Node => value instanceof Node;
 
@@ -80,7 +85,7 @@ export const isTruthy = (value: any): boolean =>
 
 export const isHook = (value: any): boolean => {
   if (isObject(value) || isFunction(value)) {
-    return !!(value as any)[HOOK_REF];
+    return !!(value as any)[HOOK_TARGET];
   }
   return false;
 };
@@ -173,20 +178,7 @@ export const compose = (...fns: Function[]): Function => {
 
 export const resolve = (value: any, fn: Function | null = null): any => (fn ? fn(value) : value);
 
-export const isPlainObject = (value: any): boolean => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
 
-  const prototype = Object.getPrototypeOf(value);
-  return (
-    (prototype === null ||
-      prototype === Object.prototype ||
-      Object.getPrototypeOf(prototype) === null) &&
-    !(Symbol.toStringTag in value) &&
-    !(Symbol.iterator in value)
-  );
-};
 
 // DOM Helpers
 export const inTheDocument = (node: Node): boolean => document.body.contains(node);
@@ -270,10 +262,12 @@ export const getBoundary = (id: string, nodes: Node[]): [number, number] => {
 export const createMarkers = (): [Comment, Comment, string] => {
   const id = uid();
 
-  const head = document.createComment("{poor-man-jsx-start}");
-  const tail = document.createComment("{poor-man-jsx-end}");
+  const head = document.createComment("{peasant-jsx-start}");
+  const tail = document.createComment("{peasant-jsx-end}");
   setMetadata(head, "key", `start_${id}`);
   setMetadata(tail, "key", `end_${id}`);
 
   return [head, tail, id];
 };
+
+export { createHook };
