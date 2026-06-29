@@ -230,7 +230,6 @@ describe(":children", () => {
 describe(":text", () => {
   it("sets the textContent of the element", () => {
     render(html`<div :text="Test"></div>`);
-
     expect(screen.getByText("Test")).toBeInTheDocument();
   });
 });

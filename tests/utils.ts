@@ -1,10 +1,5 @@
-import { expect, vi } from "vitest";
-import * as matchers from "@testing-library/jest-dom/matchers";
 import { screen } from "@testing-library/dom";
 import PoorManJSX, { render } from "../src";
-
-// Extend Vitest's expect with jest-dom matchers
-expect.extend(matchers as any);
 
 export const defer = (fn: () => void): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
@@ -23,18 +18,22 @@ export const renderToBody = (template: any) => render(template, "body");
 
 export const getTarget = () => screen.getByTestId("target");
 
-export const getById = (testid: string) => screen.getByTestId(testid);
-
-const defaultTestId = (str: string) => str.replace(/data-target/g, 'data-testid="target"');
+const toTestId = (str: string) => str.replace(/data-target/g, 'data-testid="target"');
 
 export const setup = () => {
-  PoorManJSX.onBeforeCreate(defaultTestId);
+  PoorManJSX.onBeforeCreate(toTestId);
 };
 
 export const teardown = () => {
-  PoorManJSX.removeBeforeCreate(defaultTestId);
+  PoorManJSX.removeBeforeCreate(toTestId);
   document.body.innerHTML = "";
   vi.clearAllMocks();
 };
-export { vi };
+
+/** Call in a describe block to set up and tear down the test environment automatically. */
+export const useTestScope = () => {
+  beforeEach(setup);
+  afterEach(teardown);
+};
+
 export { screen };

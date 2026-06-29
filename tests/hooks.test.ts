@@ -1,9 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { applyProps, html, createHook, watch, unwatch } from "../src";
-import { setup, teardown, renderToBody as render, getTarget } from "./utils";
+import { renderToBody as render, getTarget, useTestScope } from "./utils";
 
-beforeEach(setup);
-afterEach(teardown);
+useTestScope();
 
 describe("createHook", () => {
   it("returned Proxy is sealed", () => {

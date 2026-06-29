@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, afterEach } from "vitest";
 import PoorManJSX, { applyProps, html, render } from "../src";
 import { screen } from "./utils";
 

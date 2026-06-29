@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { fireEvent } from "@testing-library/dom";
 import {
   applyProps,
@@ -8,10 +7,9 @@ import {
   processDirectives,
   render,
 } from "../src";
-import { getTarget as target, renderToBody, setup, teardown, screen } from "./utils";
+import { getTarget as target, renderToBody, screen, useTestScope } from "./utils";
 
-beforeEach(setup);
-afterEach(teardown);
+useTestScope();
 
 describe("core", () => {
   const fn = vi.fn();

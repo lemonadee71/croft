@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { html, render } from "../src";
 import { enableLifecycle, disableLifecycle } from "../src/lifecycle";
-import { defer, setup, teardown } from "./utils";
+import { defer, useTestScope } from "./utils";
 
 /**
  * Notes:
@@ -17,8 +16,7 @@ describe("lifecycle methods", () => {
   const onMount = vi.fn((e: Event) => e);
   const onUnmount = vi.fn((e: Event) => e);
 
-  beforeEach(setup);
-  afterEach(teardown);
+  useTestScope();
 
   describe("@create", () => {
     it("runs on element creation", () => {
