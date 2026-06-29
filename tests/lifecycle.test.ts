@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { html, render } from "../src";
+import { enableLifecycle, disableLifecycle } from "../src/lifecycle";
 import { defer, setup, teardown } from "./utils";
 
 /**
@@ -132,5 +133,30 @@ describe("lifecycle methods", () => {
       expect(mock).toHaveBeenCalledTimes(1);
       expect(onDestroy).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe("enableLifecycle / disableLifecycle", () => {
+  const onMount = vi.fn();
+
+  beforeEach(() => {
+    onMount.mockClear();
+    document.body.innerHTML = "";
+    disableLifecycle();
+  });
+
+  afterEach(() => {
+    enableLifecycle();
+  });
+
+  it("prevents lifecycle events while disabled", async () => {
+    render(html`<div onMount=${onMount}>test</div>`, "body");
+    await defer(() => expect(onMount).toHaveBeenCalledTimes(0));
+  });
+
+  it("fires lifecycle events after re-enabling", async () => {
+    enableLifecycle();
+    render(html`<div onMount=${onMount}>test</div>`, "body");
+    await defer(() => expect(onMount).toHaveBeenCalledTimes(1));
   });
 });

@@ -93,3 +93,30 @@ describe("addDirective", () => {
     runAssertions();
   });
 });
+
+describe("PoorManJSX.mount", () => {
+  afterEach(() => {
+    delete (PoorManJSX as any).plugins.testPlugin;
+  });
+
+  it("stores plugin config in plugins", () => {
+    PoorManJSX.mount("testPlugin", { version: "1.0" });
+    expect((PoorManJSX as any).plugins.testPlugin).toEqual({ version: "1.0" });
+  });
+
+  it("executes _init function during mount", () => {
+    const init = vi.fn();
+    PoorManJSX.mount("testPlugin", { _init: init, value: 42 });
+    expect(init).toHaveBeenCalledTimes(1);
+  });
+
+  it("strips _init from stored plugin config", () => {
+    PoorManJSX.mount("testPlugin", { _init: vi.fn(), value: 42 });
+    expect((PoorManJSX as any).plugins.testPlugin).toEqual({ value: 42 });
+  });
+
+  it("throws when mounting a duplicate plugin name", () => {
+    PoorManJSX.mount("testPlugin", {});
+    expect(() => PoorManJSX.mount("testPlugin", {})).toThrowError("is already taken");
+  });
+});

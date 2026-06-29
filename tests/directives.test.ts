@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createEvent, fireEvent } from "@testing-library/dom";
-import { applyProps, html, createHook } from "../src";
+import { applyProps, html, createHook, modifyElement } from "../src";
 import { getTarget as target, renderToBody as render, setup, teardown, screen } from "./utils";
 
 const fn = vi.fn(() => true);
@@ -300,5 +300,65 @@ describe("directives robustness", () => {
     isLocked.value = false;
     expect(target()).not.toHaveAttribute("disabled");
     expect(target()).not.toHaveAttribute("readonly");
+  });
+});
+
+describe(":key", () => {
+  it("sets the key metadata from a direct value", () => {
+    render(html`<div :key="item-1" data-target></div>`);
+    // @ts-ignore __meta is dynamically set
+    expect(target().__meta?.key).toBe("item-1");
+  });
+
+  it("references another attribute value with $ prefix", () => {
+    render(html`<div data-id="abc" :key="$data-id" data-target></div>`);
+    // @ts-ignore __meta is dynamically set
+    expect(target().__meta?.key).toBe("abc");
+  });
+
+  it("works via applyProps with _key", () => {
+    const div = document.createElement("div");
+    applyProps(div, { _key: "from-props" });
+    // @ts-ignore __meta is dynamically set
+    expect(div.__meta?.key).toBe("from-props");
+  });
+});
+
+describe("modifyElement", () => {
+  it("sets an attribute with type attr", () => {
+    const div = document.createElement("div");
+    modifyElement(div, "attr", { key: "data-foo", value: "bar" });
+    expect(div.getAttribute("data-foo")).toBe("bar");
+  });
+
+  it("sets text content with type text", () => {
+    const div = document.createElement("div");
+    modifyElement(div, "text", { key: undefined, value: "hello" });
+    expect(div.textContent).toBe("hello");
+  });
+
+  it("applies a style prop with type style:prop", () => {
+    const div = document.createElement("div");
+    modifyElement(div, "style:prop", { key: "color", value: "red" });
+    expect(div.style.color).toBe("red");
+  });
+
+  it("accepts a string selector with context", () => {
+    const parent = document.createElement("div");
+    parent.innerHTML = '<span data-testid="inner"></span>';
+    modifyElement("span", "attr", { key: "data-foo", value: "bar" }, parent);
+    expect(parent.querySelector("span")?.getAttribute("data-foo")).toBe("bar");
+  });
+
+  it("returns the element after applying the directive", () => {
+    const div = document.createElement("div");
+    const result = modifyElement(div, "attr", { key: "data-foo", value: "bar" });
+    expect(result).toBe(div);
+  });
+
+  it("adds a class via type class:name", () => {
+    const div = document.createElement("div");
+    modifyElement(div, "class:name", { key: "active", value: true });
+    expect(div.classList.contains("active")).toBe(true);
   });
 });
