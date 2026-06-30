@@ -32,12 +32,10 @@ import {
 import { watch } from "./hooks";
 import { BuiltinDirectives, DirectivesRegistry, getTypeOfAttrName, getTypeOfKey } from "./directives";
 import {
-  runBeforeCreate,
-  runAfterCreate,
-  runBeforeHydrate,
-  runAfterHydrate,
+  runLifecycle,
   triggerLifecycle,
 } from "./lifecycle";
+import { resolveComponents } from "./components";
 
 /**
  * Tagged template literal to create a Template from JSX-like HTML string.
@@ -93,10 +91,10 @@ export const render = (template: Template, target?: string | HTMLElement): any =
  * @param template The template object.
  */
 export const createElementFromTemplate = (template: Template): DocumentFragment => {
-  const str = runBeforeCreate(template.template);
+  const str = runLifecycle("beforeCreate", template.template);
   const fragment = document.createRange().createContextualFragment(str);
 
-  runAfterCreate(fragment, template.values);
+  runLifecycle("afterCreate", fragment, template.values);
   processDirectives(fragment, template.values);
 
   for (const child of getChildren(fragment)) {
@@ -112,7 +110,7 @@ export const createElementFromTemplate = (template: Template): DocumentFragment 
  * @param context The values dictionary.
  */
 export const processDirectives = (root: HTMLElement | DocumentFragment, context: Record<string, any>) => {
-  const fns = [resolveBody, runBeforeHydrate, resolveAttributes, runAfterHydrate];
+  const fns = [resolveBody, resolveComponents, runLifecycle.bind(null, "beforeHydrate"), resolveAttributes, runLifecycle.bind(null, "afterHydrate")];
 
   for (const fn of fns) fn.call(null, root, context);
 };

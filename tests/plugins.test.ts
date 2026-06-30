@@ -10,7 +10,7 @@ describe("runBeforeCreate", () => {
   it("process template string before creation", () => {
     const fn = vi.fn((str: string) => str.replace(/x-/g, "data-"));
 
-    PoorManJSX.onBeforeCreate(fn);
+    PoorManJSX.onLifecycle("beforeCreate", fn);
     render(html`<div x-testid="preprocessed"></div>`, "body");
 
     expect(fn).toHaveBeenCalledTimes(1);

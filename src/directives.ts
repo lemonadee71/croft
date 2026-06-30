@@ -40,22 +40,31 @@ export interface Directive {
 export interface RegistryEntry {
   type: string;
   predicate: {
-    attrName: (key: string) => [string, string] | null | false;
-    objKey: (key: string) => [string, string] | null | false;
+    attrName: (key: string) => [string, string] | null;
+    objKey: (key: string) => [string, string] | null;
   };
   callback: (element: HTMLElement, data: { key: any; value: any }, modify: any) => void;
 }
 
 export const DirectivesRegistry = new Map<string, RegistryEntry>();
 
-const createPredicate = (type: string, fn?: Function) => (key: string): [string, string] | false => {
-  if (fn) {
-    const result = fn(key);
-    if (!result) return false;
-    if (isArray(result)) return result as [string, string];
-    return [type, key];
+type PredicateFn = (key: string) => string | false | [string, string];
+
+const createPredicate = (type: string, fn?: string | PredicateFn): ((key: string) => [string, string] | null) => {
+  if (typeof fn === "string") {
+    return (key: string) => (key === fn ? [type, key] : null);
   }
-  return key === type ? [type, key] : false;
+
+  if (fn) {
+    return (key: string) => {
+      const result = fn(key);
+      if (!result) return null;
+      if (isArray(result)) return result as [string, string];
+      return [type, key];
+    };
+  }
+
+  return (key: string) => (key === type ? [type, key] : null);
 };
 
 const normalizePredicate = (type: string, predicate: any) => {
@@ -106,43 +115,64 @@ export const removeDirective = (...names: string[]) => {
 
 // ============= BUILT-IN DIRECTIVES =============
 
-export const BuiltinDirectives: RegistryEntry[] = [
-  {
-    type: "attr",
+interface BuiltinDirectiveDef {
+  type: string;
+  attrName?: string | PredicateFn;
+  objKey?: string | PredicateFn;
+  callback: (element: HTMLElement, data: { key: any; value: any }, modify: any) => void;
+}
+
+const defineBuiltin = (def: BuiltinDirectiveDef): RegistryEntry => {
+  const resolvePattern = (pattern?: string | PredicateFn): ((key: string) => [string, string] | null) => {
+    if (!pattern) return createPredicate(def.type);
+    if (typeof pattern === "string") {
+      return (key: string) => (key === pattern ? [def.type, key] : null);
+    }
+    return (key: string) => {
+      const result = pattern(key);
+      if (!result) return null;
+      if (isArray(result)) return result as [string, string];
+      return [def.type, result];
+    };
+  };
+
+  return {
+    type: def.type,
     predicate: {
-      attrName: () => false,
-      objKey: () => false,
+      attrName: resolvePattern(def.attrName),
+      objKey: resolvePattern(def.objKey ?? def.attrName),
     },
+    callback: def.callback,
+  };
+};
+
+export const BuiltinDirectives: RegistryEntry[] = [
+  defineBuiltin({
+    type: "attr",
+    attrName: () => false,
     callback: (element, data) => {
       element.setAttribute(data.key, data.value);
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "text",
-    predicate: {
-      attrName: (key) => key === ":text" && ["text", key],
-      objKey: (key) => key === "textContent" && ["text", key],
-    },
+    attrName: ":text",
+    objKey: "textContent",
     callback: (element, data) => {
       element.textContent = data.value;
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "html",
-    predicate: {
-      attrName: (key) => key === ":html" && ["html", key],
-      objKey: (key) => (key === "innerHTML" || key === "html") && ["html", key],
-    },
+    attrName: ":html",
+    objKey: (key) => (key === "innerHTML" || key === "html") && key,
     callback: (element, data) => {
       element.innerHTML = unescapeHTML(data.value);
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "class:name",
-    predicate: {
-      attrName: (key) => key.startsWith("class:") && ["class:name", key.replace("class:", "")],
-      objKey: (key) => key.startsWith("class:") && ["class:name", key.replace("class:", "")],
-    },
+    attrName: (key) => key.startsWith("class:") && key.replace("class:", ""),
     callback: (element, data) => {
       const [ifTrue, ifFalse] = data.key
         .replace(WRAPPING_BRACKETS, "")
@@ -157,13 +187,11 @@ export const BuiltinDirectives: RegistryEntry[] = [
         if (ifFalse) element.classList.add(...ifFalse);
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "class",
-    predicate: {
-      attrName: (key) => (key === "class" || key === ":_class") && ["class", key],
-      objKey: (key) => key === "class" && ["class", key],
-    },
+    attrName: (key) => (key === "class" || key === ":_class") && key,
+    objKey: "class",
     callback: (element, data, modify) => {
       if (isString(data.value)) {
         element.classList.add(...data.value.split(" ").filter(isTruthy));
@@ -179,24 +207,18 @@ export const BuiltinDirectives: RegistryEntry[] = [
         throw new TypeError("You can only pass a string, an array, or a plain object to class.");
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "style:prop",
-    predicate: {
-      attrName: (key) => key.startsWith("style:") && ["style:prop", key.replace("style:", "")],
-      objKey: (key) => key.startsWith("style:") && ["style:prop", key.replace("style:", "")],
-    },
+    attrName: (key) => key.startsWith("style:") && key.replace("style:", ""),
     callback: (element, data) => {
       const key = data.key.replace(/([A-Z])/g, "-$1").toLowerCase();
       element.style.setProperty(key, data.value);
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "style",
-    predicate: {
-      attrName: (key) => key === "style" && ["style", key],
-      objKey: (key) => key === "style" && ["style", key],
-    },
+    attrName: "style",
     callback: (element, data, modify) => {
       if (isString(data.value)) {
         element.setAttribute("style", data.value);
@@ -208,20 +230,13 @@ export const BuiltinDirectives: RegistryEntry[] = [
         throw new TypeError("You can only pass a string or a plain object to style.");
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "lifecycle",
-    predicate: {
-      attrName: (key) => {
-        const k = key.toLowerCase().trim();
-        const name = k.replace("on", "");
-        return k.startsWith("on") && LIFECYCLE_METHODS.includes(name) ? ["lifecycle", name] : false;
-      },
-      objKey: (key) => {
-        const k = key.toLowerCase().trim();
-        const name = k.replace("on", "");
-        return k.startsWith("on") && LIFECYCLE_METHODS.includes(name) ? ["lifecycle", name] : false;
-      },
+    attrName: (key) => {
+      const k = key.toLowerCase().trim();
+      const name = k.replace("on", "");
+      return k.startsWith("on") && LIFECYCLE_METHODS.includes(name) && name;
     },
     callback: (element, data) => {
       const fns = [data.value].flat();
@@ -232,18 +247,12 @@ export const BuiltinDirectives: RegistryEntry[] = [
         element.addEventListener(`@${key}`, fn, { once });
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "listener",
-    predicate: {
-      attrName: (key) =>
-        key.toLowerCase().startsWith("on") && key !== "on"
-          ? ["listener", key.replace("on", "").toLowerCase()]
-          : false,
-      objKey: (key) =>
-        key.toLowerCase().startsWith("on") && key !== "on"
-          ? ["listener", key.replace("on", "").toLowerCase()]
-          : false,
+    attrName: (key) => {
+      const lower = key.toLowerCase();
+      return lower.startsWith("on") && key !== "on" && key.replace("on", "").toLowerCase();
     },
     callback: (element, data) => {
       const [eventName, ...options] = data.key.split(".");
@@ -269,13 +278,10 @@ export const BuiltinDirectives: RegistryEntry[] = [
         });
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "on",
-    predicate: {
-      attrName: (key) => key === "on" && ["on", key],
-      objKey: (key) => key === "on" && ["on", key],
-    },
+    attrName: "on",
     callback: (element, data, modify) => {
       if (!isPlainObject(data.value) || !Object.values(data.value).flat().every(isFunction)) {
         throw new TypeError("Event listener only accepts function | function[]");
@@ -286,22 +292,14 @@ export const BuiltinDirectives: RegistryEntry[] = [
         modify(element, evtType, { key: evt, value: fns });
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "toggle",
-    predicate: {
-      attrName: (key) => {
-        const [k] = key.split(".");
-        return BOOLEAN_ATTRS.includes(k) || k.startsWith("toggle:")
-          ? ["toggle", key.replace("toggle:", "")]
-          : false;
-      },
-      objKey: (key) => {
-        const [k] = key.split(".");
-        return BOOLEAN_ATTRS.includes(k) || k.startsWith("toggle:")
-          ? ["toggle", key.replace("toggle:", "")]
-          : false;
-      },
+    attrName: (key) => {
+      const [k] = key.split(".");
+      return (BOOLEAN_ATTRS.includes(k) || k.startsWith("toggle:"))
+        ? key.replace("toggle:", "")
+        : false;
     },
     callback: (element, data) => {
       const [arg, option] = data.key.split(".");
@@ -319,13 +317,11 @@ export const BuiltinDirectives: RegistryEntry[] = [
         }
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "children",
-    predicate: {
-      attrName: (key) => key === ":children" && ["children", key],
-      objKey: (key) => key === "children" && ["children", key],
-    },
+    attrName: ":children",
+    objKey: "children",
     callback: (element, data) => {
       const previousActiveElement = document.activeElement;
 
@@ -349,26 +345,22 @@ export const BuiltinDirectives: RegistryEntry[] = [
       );
       (matchingElement as HTMLElement)?.focus();
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "key",
-    predicate: {
-      attrName: (key) => key === ":key" && ["key", key],
-      objKey: (key) => key === "_key" && ["key", key],
-    },
+    attrName: ":key",
+    objKey: "_key",
     callback: (element, data) => {
       const key = data.value.startsWith("$")
         ? element.getAttribute(data.value.replace("$", ""))
         : data.value;
       setMetadata(element, "key", key);
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "skip",
-    predicate: {
-      attrName: (key) => key === ":skip" && ["skip", key],
-      objKey: (key) => key === "_skip" && ["skip", key],
-    },
+    attrName: ":skip",
+    objKey: "_skip",
     callback: (element, data) => {
       if (!data.value) {
         setMetadata(element, "skip", { all: true });
@@ -383,13 +375,11 @@ export const BuiltinDirectives: RegistryEntry[] = [
         });
       }
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "ref",
-    predicate: {
-      attrName: (key) => key === ":ref" && ["ref", key],
-      objKey: (key) => key === "_ref" && ["ref", key],
-    },
+    attrName: ":ref",
+    objKey: "_ref",
     callback: (element, data) => {
       const [key, o] = isArray(data.value) ? data.value : ["current", data.value];
 
@@ -399,13 +389,11 @@ export const BuiltinDirectives: RegistryEntry[] = [
 
       o[key] = element;
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "show",
-    predicate: {
-      attrName: (key) => key === ":show" && ["show", key],
-      objKey: (key) => key === "_show" && ["show", key],
-    },
+    attrName: ":show",
+    objKey: "_show",
     callback: (element, data) => {
       let display = (element as any).__meta?.og_display;
 
@@ -417,18 +405,16 @@ export const BuiltinDirectives: RegistryEntry[] = [
       if (isTruthy(data.value)) element.style.display = display;
       else element.style.display = "none";
     },
-  },
-  {
+  }),
+  defineBuiltin({
     type: "visible",
-    predicate: {
-      attrName: (key) => key === ":visible" && ["visible", key],
-      objKey: (key) => key === "_visible" && ["visible", key],
-    },
+    attrName: ":visible",
+    objKey: "_visible",
     callback: (element, data) => {
       if (isTruthy(data.value)) element.style.visibility = "visible";
       else element.style.visibility = "hidden";
     },
-  },
+  }),
 ];
 
 export const resolveTypeAndKey = (key: string, isObjKey: boolean): [string, string] => {

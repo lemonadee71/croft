@@ -15,63 +15,33 @@ export const lifecycleHooks: LifecycleHooks = {
 };
 
 /**
- * Registers a callback to process the raw HTML template string before elements are parsed.
- * @param callbacks Callback functions mapping HTML string to HTML string.
+ * Registers callbacks for a lifecycle stage.
  */
-export const onBeforeCreate = (...callbacks: Function[]) =>
-  lifecycleHooks.beforeCreate.push(...callbacks);
-
-export const removeBeforeCreate = (callback: Function) => {
-  lifecycleHooks.beforeCreate = lifecycleHooks.beforeCreate.filter((fn) => fn !== callback);
-};
-
-export const runBeforeCreate = (htmlString: string): string =>
-  lifecycleHooks.beforeCreate.reduce(
-    (result, fn) => fn(result),
-    htmlString
-  );
+export const onLifecycle = (type: keyof LifecycleHooks, ...callbacks: Function[]) =>
+  lifecycleHooks[type].push(...callbacks);
 
 /**
- * Registers a callback to run right after a DocumentFragment is created from a template.
- * @param callbacks Callback functions taking the DocumentFragment and values dictionary.
+ * Removes a callback from a lifecycle stage.
  */
-export const onAfterCreate = (...callbacks: Function[]) =>
-  lifecycleHooks.afterCreate.push(...callbacks);
-
-export const removeAfterCreate = (callback: Function) => {
-  lifecycleHooks.afterCreate = lifecycleHooks.afterCreate.filter((fn) => fn !== callback);
+export const removeLifecycle = (type: keyof LifecycleHooks, callback: Function) => {
+  lifecycleHooks[type] = lifecycleHooks[type].filter((fn) => fn !== callback);
 };
-
-export const runAfterCreate = (...args: any[]) =>
-  lifecycleHooks.afterCreate.forEach((fn) => fn(...args));
 
 /**
- * Registers a callback to run before directives are hydrated on the created elements.
- * @param callbacks Callback functions taking the DocumentFragment and values dictionary.
+ * Runs all callbacks for a lifecycle stage.
+ * For `beforeCreate`, callbacks transform the HTML string (reduce).
+ * For all others, callbacks run as side effects (forEach).
  */
-export const onBeforeHydrate = (...callbacks: Function[]) =>
-  lifecycleHooks.beforeHydrate.push(...callbacks);
+export const runLifecycle = (type: keyof LifecycleHooks, ...args: any[]): any => {
+  if (type === "beforeCreate") {
+    return lifecycleHooks.beforeCreate.reduce(
+      (result, fn) => fn(result),
+      args[0]
+    );
+  }
 
-export const removeBeforeHydrate = (callback: Function) => {
-  lifecycleHooks.beforeHydrate = lifecycleHooks.beforeHydrate.filter((fn) => fn !== callback);
+  lifecycleHooks[type].forEach((fn) => fn(...args));
 };
-
-export const runBeforeHydrate = (...args: any[]) =>
-  lifecycleHooks.beforeHydrate.forEach((fn) => fn(...args));
-
-/**
- * Registers a callback to run after directives have been fully hydrated.
- * @param callbacks Callback functions taking the DocumentFragment and values dictionary.
- */
-export const onAfterHydrate = (...callbacks: Function[]) =>
-  lifecycleHooks.afterHydrate.push(...callbacks);
-
-export const removeAfterHydrate = (callback: Function) => {
-  lifecycleHooks.afterHydrate = lifecycleHooks.afterHydrate.filter((fn) => fn !== callback);
-};
-
-export const runAfterHydrate = (...args: any[]) =>
-  lifecycleHooks.afterHydrate.forEach((fn) => fn(...args));
 
 // ============= DOM MUTATIONOBSERVER LIFECYCLE =============
 

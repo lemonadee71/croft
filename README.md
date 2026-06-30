@@ -12,7 +12,8 @@ Unlike traditional virtual DOM libraries, Peasant JSX uses native browser featur
 - **🔄 Decoupled Reactivity:** Powered by a clean pub/sub hook proxy model that updates only the specific elements bound to state changes.
 - **🛡️ Typesafe Hook References:** Provides complete TypeScript support for property references and nested method forwarding (e.g. array/string manipulations).
 - **🔌 Unified Directives Registry:** All directives (built-in and custom plugins) share a common matcher-handler interface, eliminating hardcoded switch blocks.
-- **🏷️ Native DOM Lifecycles:** MutationObserver-based lifecycles supporting `@create`, `@mount`, `@unmount`, and `@destroy` hooks.
+- **🏷️ Native DOM Lifecycles:** MutationObserver-based lifecycles supporting `@create`, `@mount`, `@unmount`, and `@destroy` hooks, with a generic plugin hook pipeline (`onLifecycle`).
+- **🧩 Custom Components:** Register components with custom tag names — they work just like native elements in templates, with full directive and lifecycle support.
 - **🪶 Ultra-Lightweight:** Zero heavy dependencies; uses the lightweight `is-what` library for fast, robust type checking.
 
 ---
@@ -173,8 +174,103 @@ html`
 - `onUnmount`: Dispatched when the element is removed from its parent node.
 - `onDestroy`: Dispatched when the element is detached and no longer in the document (perfect for cleaning up resources/event listeners).
 
+### Rendering Pipeline Hooks
+
+For plugins that need to hook into the template compilation pipeline, use the generic lifecycle API:
+
+```typescript
+import PoorManJSX from "peasant-jsx";
+
+// Register a callback for a pipeline stage
+PoorManJSX.onLifecycle("beforeCreate", (htmlString: string) => htmlString.replace(/foo/g, "bar"));
+PoorManJSX.onLifecycle("afterCreate", (fragment: DocumentFragment, values: Record<string, any>) => { /* ... */ });
+PoorManJSX.onLifecycle("beforeHydrate", (root: HTMLElement, context: Record<string, any>) => { /* ... */ });
+PoorManJSX.onLifecycle("afterHydrate", (root: HTMLElement, context: Record<string, any>) => { /* ... */ });
+
+// Remove a callback
+PoorManJSX.removeLifecycle("beforeCreate", myCallback);
+
+// Run all callbacks for a stage (used internally)
+PoorManJSX.runLifecycle("beforeCreate", templateString);
+```
+
+| Stage | Signature | Description |
+| :--- | :--- | :--- |
+| `beforeCreate` | `(htmlString) => htmlString` | Transform the raw HTML string before DOM parsing. |
+| `afterCreate` | `(fragment, values)` | Inspect/modify the DocumentFragment after creation. |
+| `beforeHydrate` | `(root, context)` | Run logic just before directive hydration. |
+| `afterHydrate` | `(root, context)` | Run logic after all directives are applied.
+
 ---
 
-## License
+## Custom Components
 
-MIT
+Peasant JSX supports custom components — elements with a user-defined tag name that render a template when encountered in the DOM.
+
+### Defining a Component
+
+Components can be registered via `defineComponent` or the plugin mount system:
+
+```typescript
+import { defineComponent, html } from "peasant-jsx";
+
+defineComponent("my-greeting", (props: any, children: any[]) => {
+  return html`<h1>Hello, ${props.name}!</h1>`;
+});
+```
+
+Or grouped under a plugin mount:
+
+```typescript
+import PoorManJSX from "peasant-jsx";
+
+PoorManJSX.mount("components", {
+  "my-button": (props: any) =>
+    html`<button class=${props.variant}>${props.label}</button>`,
+  "my-badge": (props: any) =>
+    html`<span class=${props.variant}>${props.label}</span>`,
+});
+```
+
+### Component Signature
+
+```
+(props: Record<string, any>, children: Node[]) => Template
+```
+
+- **props** — Object of resolved attribute values. Static strings passed through; dynamic values (placeholders, hooks) resolved before reaching the component.
+- **children** — Array of child DOM nodes (if the custom element was not self-closing). Children are fully processed through the directive pipeline before being passed, so event listeners, class toggles, and nested components in children work as expected.
+
+### Usage in Templates
+
+```typescript
+// Self-closing tag
+html`<my-greeting name="World"></my-greeting>`
+
+// With child content
+html`
+  <my-card variant="primary">
+    <h2>Title</h2>
+    <p>Content here</p>
+  </my-card>
+`
+
+// With reactive state (static resolution — parent re-renders on change)
+const state = createHook({ name: "Peasant" });
+html`<my-greeting name=${state.$name}></my-greeting>`
+// → state.name = "JSX"; re-render parent to update component
+```
+
+### How It Works
+
+Components are resolved in **phase 2** of the rendering pipeline (after `resolveBody`, before `resolveAttributes`):
+
+1. The DOM is walked bottom-up (innermost components first).
+2. Each registered custom element has its attributes collected and resolved into a props object.
+3. Child DOM nodes are extracted and processed through the full directive pipeline (so listeners, class toggles, nested components in children all work).
+4. The component's render function is called with `(props, processedChildren)`.
+5. The returned Template is compiled through `createElementFromTemplate` — its own content goes through the full pipeline independently, including nested component resolution.
+6. The custom element is replaced with the rendered fragment.
+7. The already-hydrated content is skipped by subsequent pipeline phases.
+
+Because components are compiled through the standard pipeline, they support all built-in directives, lifecycle events, and nested components.

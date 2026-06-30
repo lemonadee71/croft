@@ -21,11 +21,11 @@ export const getTarget = () => screen.getByTestId("target");
 const toTestId = (str: string) => str.replace(/data-target/g, 'data-testid="target"');
 
 export const setup = () => {
-  PoorManJSX.onBeforeCreate(toTestId);
+  PoorManJSX.onLifecycle("beforeCreate", toTestId);
 };
 
 export const teardown = () => {
-  PoorManJSX.removeBeforeCreate(toTestId);
+  PoorManJSX.removeLifecycle("beforeCreate", toTestId);
   document.body.innerHTML = "";
   vi.clearAllMocks();
 };
