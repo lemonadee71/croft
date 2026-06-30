@@ -214,7 +214,7 @@ Components can be registered via `defineComponent` or the plugin mount system:
 ```typescript
 import { defineComponent, html } from "peasant-jsx";
 
-defineComponent("my-greeting", (props: any, children: any[]) => {
+defineComponent("my-greeting", (props: any, slots: Record<string, Node[]>) => {
   return html`<h1>Hello, ${props.name}!</h1>`;
 });
 ```
@@ -235,11 +235,11 @@ PoorManJSX.mount("components", {
 ### Component Signature
 
 ```
-(props: Record<string, any>, children: Node[]) => Template
+(props: Record<string, any>, slots: Record<string, Node[]>) => Template
 ```
 
 - **props** — Object of resolved attribute values. Static strings passed through; dynamic values (placeholders, hooks) resolved before reaching the component.
-- **children** — Array of child DOM nodes (if the custom element was not self-closing). Children are fully processed through the directive pipeline before being passed, so event listeners, class toggles, and nested components in children work as expected.
+- **slots** — Object of named child node arrays. Children with a `slot="name"` attribute go into `slots.name`; children without go into `slots.default`. All children are processed through the directive pipeline before reaching the component.
 
 ### Usage in Templates
 
@@ -247,7 +247,7 @@ PoorManJSX.mount("components", {
 // Self-closing tag
 html`<my-greeting name="World"></my-greeting>`
 
-// With child content
+// With child content (default slot)
 html`
   <my-card variant="primary">
     <h2>Title</h2>
@@ -261,16 +261,89 @@ html`<my-greeting name=${state.$name}></my-greeting>`
 // → state.name = "JSX"; re-render parent to update component
 ```
 
+### Slots
+
+Components can define named insertion points using `<slot>` elements in their template. Children are projected into matching slots at render time.
+
+#### Named Slots
+
+Use the `slot` attribute on child elements to target a specific name, and `<slot name="...">` in the component template to declare the insertion point:
+
+```typescript
+defineComponent("my-split", (_props: any, slots: any) =>
+  html`
+    <div class="split">
+      <header><slot name="header"></slot></header>
+      <main><slot></slot></main>
+      <footer><slot name="footer"></slot></footer>
+    </div>
+  `
+);
+
+// Usage:
+html`
+  <my-split>
+    <h1 slot="header">Title</h1>
+    <p>Body content</p>
+    <small slot="footer">Footer note</small>
+  </my-split>
+`;
+```
+
+- Children without a `slot` attribute go into `slots.default`.
+- Children with `slot="name"` go into `slots.name`.
+- The `slot` attribute is stripped from rendered output automatically.
+
+#### Fallback Content
+
+Content inside a `<slot>` element is used as fallback when no matching children are provided:
+
+```typescript
+defineComponent("my-card", (_props: any, slots: any) =>
+  html`
+    <div class="card">
+      <slot name="header"><h1>Default Title</h1></slot>
+      <slot><p>Default body</p></slot>
+    </div>
+  `
+);
+
+// Renders with fallback content:
+html`<my-card></my-card>`
+// → <div class="card"><h1>Default Title</h1><p>Default body</p></div>
+
+// Renders with projected children:
+html`
+  <my-card>
+    <h2 slot="header">Custom Title</h2>
+    <span>Custom body</span>
+  </my-card>
+`
+// → <div class="card"><h2>Custom Title</h2><span>Custom body</span></div>
+```
+
+#### Programmatic Access
+
+The `slots` object is passed directly to the render function, enabling programmatic use beyond `<slot>` elements:
+
+```typescript
+defineComponent("my-inspector", (_props: any, slots: any) =>
+  html`<span>${slots.default ? slots.default.length : 0} children</span>`
+);
+```
+
 ### How It Works
 
 Components are resolved in **phase 2** of the rendering pipeline (after `resolveBody`, before `resolveAttributes`):
 
 1. The DOM is walked bottom-up (innermost components first).
 2. Each registered custom element has its attributes collected and resolved into a props object.
-3. Child DOM nodes are extracted and processed through the full directive pipeline (so listeners, class toggles, nested components in children all work).
-4. The component's render function is called with `(props, processedChildren)`.
-5. The returned Template is compiled through `createElementFromTemplate` — its own content goes through the full pipeline independently, including nested component resolution.
-6. The custom element is replaced with the rendered fragment.
-7. The already-hydrated content is skipped by subsequent pipeline phases.
+3. Child DOM nodes are extracted and bucketed into named slots by the `slot` attribute (`slots.default` for unnamed children).
+4. Each slot bucket's children are processed through the full directive pipeline (listeners, class toggles, nested components all work).
+5. The component's render function is called with `(props, slots)`.
+6. The returned Template is compiled through `createElementFromTemplate` — its own content goes through the full pipeline independently, including nested component resolution.
+7. `<slot>` elements in the fragment are resolved: each slot is replaced with its matching children (or its fallback content if none match).
+8. The custom element is replaced with the rendered fragment.
+9. The already-hydrated content is skipped by subsequent pipeline phases.
 
-Because components are compiled through the standard pipeline, they support all built-in directives, lifecycle events, and nested components.
+Because components are compiled through the standard pipeline, they support all built-in directives, lifecycle events, slots, and nested components.

@@ -13,6 +13,13 @@ describe("component registration", () => {
     removeComponent("my-button");
   });
 
+  it("ignores slot attribute on regular elements outside components", () => {
+    render(html`<div slot="foo" data-testid="plain">text</div>`, "body");
+    const el = screen.getByTestId("plain");
+    expect(el).toHaveAttribute("slot", "foo");
+    expect(el).toHaveTextContent("text");
+  });
+
   it("defines and renders a simple component", () => {
     defineComponent("my-counter", (props: any) =>
       html`<span data-testid="counter">Count: ${props.initial}</span>`
@@ -24,8 +31,8 @@ describe("component registration", () => {
   });
 
   it("passes children to component", () => {
-    defineComponent("my-panel", (props: any, children: any[]) =>
-      html`<div data-testid="panel" class=${props.type}>${children}</div>`
+    defineComponent("my-panel", (props: any, slots: any) =>
+      html`<div data-testid="panel" class=${props.type}>${slots.default}</div>`
     );
 
     render(
@@ -53,8 +60,8 @@ describe("component registration", () => {
       html`<span data-testid="avatar">${props.label}</span>`
     );
 
-    defineComponent("my-card", (props: any, children: any[]) =>
-      html`<div data-testid="card">${children}</div>`
+    defineComponent("my-card", (_props: any, slots: any) =>
+      html`<div data-testid="card">${slots.default}</div>`
     );
 
     render(
@@ -199,8 +206,8 @@ describe("complex component scenarios", () => {
   it("renders component children that contain directives", () => {
     const onClick = vi.fn();
 
-    defineComponent("my-card", (_props: any, children: any[]) =>
-      html`<div data-testid="card">${children}</div>`
+    defineComponent("my-card", (_props: any, slots: any) =>
+      html`<div data-testid="card">${slots.default}</div>`
     );
 
     render(
@@ -213,6 +220,127 @@ describe("complex component scenarios", () => {
     );
 
     expect(screen.getByTestId("card")).toBeInTheDocument();
+    screen.getByTestId("btn").click();
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("targets named slots via <slot> elements and slot attribute", () => {
+    defineComponent("my-split", (_props: any, slots: any) =>
+      html`
+        <div data-testid="split">
+          <header><slot name="header"></slot></header>
+          <main><slot></slot></main>
+          <footer><slot name="footer"></slot></footer>
+        </div>
+      `
+    );
+
+    render(
+      html`
+        <my-split>
+          <h1 slot="header">Title</h1>
+          <p>Body content</p>
+          <small slot="footer">Footer note</small>
+        </my-split>
+      `,
+      "body"
+    );
+
+    expect(screen.getByTestId("split")).toBeInTheDocument();
+    expect(screen.getByTestId("split")).toContainHTML("<h1>Title</h1>");
+    expect(screen.getByTestId("split")).toContainHTML("<p>Body content</p>");
+    expect(screen.getByTestId("split")).toContainHTML("<small>Footer note</small>");
+  });
+
+  it("uses fallback content when no matching slot children are provided", () => {
+    defineComponent("my-fallback", (_props: any, slots: any) =>
+      html`
+        <div data-testid="fallback">
+          <slot name="header"><h1>Default Header</h1></slot>
+          <slot><p>Default body</p></slot>
+        </div>
+      `
+    );
+
+    render(html`<my-fallback></my-fallback>`, "body");
+
+    expect(screen.getByTestId("fallback")).toContainHTML("<h1>Default Header</h1>");
+    expect(screen.getByTestId("fallback")).toContainHTML("<p>Default body</p>");
+  });
+
+  it("replaces fallback content when matching slot children exist", () => {
+    defineComponent("my-fallback", (_props: any, slots: any) =>
+      html`
+        <div data-testid="replace">
+          <slot name="header"><h1>Default Header</h1></slot>
+          <slot><p>Default body</p></slot>
+        </div>
+      `
+    );
+
+    render(
+      html`
+        <my-fallback>
+          <h2 slot="header">Custom Title</h2>
+          <span>Custom body</span>
+        </my-fallback>
+      `,
+      "body"
+    );
+
+    expect(screen.getByTestId("replace")).not.toContainHTML("<h1>Default Header</h1>");
+    expect(screen.getByTestId("replace")).toContainHTML("<h2>Custom Title</h2>");
+    expect(screen.getByTestId("replace")).not.toContainHTML("<p>Default body</p>");
+    expect(screen.getByTestId("replace")).toContainHTML("<span>Custom body</span>");
+  });
+
+  it("exposes slots as the third argument for programmatic access", () => {
+    defineComponent("my-inspector", (_props: any, slots: any) => {
+      return html`<span data-testid="count">${slots.default ? slots.default.length : 0}</span>`;
+    });
+
+    render(html`<my-inspector><p>A</p><p>B</p></my-inspector>`, "body");
+
+    expect(screen.getByTestId("count")).toHaveTextContent("2");
+  });
+
+  it("uses slots at the component root without a wrapping element", () => {
+    defineComponent("my-skinny", (_props: any, slots: any) =>
+      html`<slot name="a"></slot><slot name="b"></slot>`
+    );
+
+    render(
+      html`
+        <my-skinny>
+          <span slot="a" data-testid="a">A</span>
+          <span slot="b" data-testid="b">B</span>
+        </my-skinny>
+      `,
+      "body"
+    );
+
+    expect(screen.getByTestId("a")).toBeInTheDocument();
+    expect(screen.getByTestId("b")).toBeInTheDocument();
+    expect(screen.getByTestId("a")).toHaveTextContent("A");
+    expect(screen.getByTestId("b")).toHaveTextContent("B");
+  });
+
+  it("processes directives on named slot children", () => {
+    const onClick = vi.fn();
+
+    defineComponent("my-actions", (_props: any, slots: any) =>
+      html`<div data-testid="actions"><slot name="buttons"></slot></div>`
+    );
+
+    render(
+      html`
+        <my-actions>
+          <button slot="buttons" data-testid="btn" onClick=${onClick}>Go</button>
+        </my-actions>
+      `,
+      "body"
+    );
+
     screen.getByTestId("btn").click();
     expect(onClick).toHaveBeenCalledTimes(1);
   });

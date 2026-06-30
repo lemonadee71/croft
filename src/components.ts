@@ -11,23 +11,49 @@ export const removeComponent = (name: string) => {
   ComponentsRegistry.delete(name);
 };
 
-/**
- * Resolves props values — hooks are resolved to their current static value.
- */
 const resolvePropValue = (value: any): any => {
   if (isHook(value)) return (value as any).data?.value;
   return value;
 };
 
-/**
- * Phase 2 of the rendering pipeline.
- * Walks the DOM bottom-up, finds registered custom element tags,
- * renders their component template, and replaces the element in-place.
- *
- * The replaced content goes through `createElementFromTemplate` →
- * `processDirectives`, so all directives, nested components, and hooks
- * are fully handled on the component's own subtree.
- */
+const extractSlots = (children: Node[]): Record<string, Node[]> => {
+  const slots: Record<string, Node[]> = {};
+  for (const child of children) {
+    const el = child as Element;
+    const slotAttr = el.getAttribute?.("slot");
+    if (slotAttr) {
+      el.removeAttribute("slot");
+      if (!slots[slotAttr]) slots[slotAttr] = [];
+      slots[slotAttr].push(child);
+    } else {
+      if (!slots.default) slots.default = [];
+      slots.default.push(child);
+    }
+  }
+  return slots;
+};
+
+const resolveSlots = (fragment: DocumentFragment, slots: Record<string, Node[]>) => {
+  for (const child of getChildren(fragment)) {
+    traverse(child, (el) => {
+      if (el.tagName?.toLowerCase() === "slot") {
+        const name = el.getAttribute("name") || "default";
+        const matchingChildren = slots[name];
+        if (matchingChildren && matchingChildren.length > 0) {
+          el.replaceWith(...matchingChildren);
+        } else {
+          const fallback = Array.from(el.childNodes);
+          if (fallback.length > 0) {
+            el.replaceWith(...fallback);
+          } else {
+            el.remove();
+          }
+        }
+      }
+    }, true);
+  }
+};
+
 export const resolveComponents = (root: HTMLElement | DocumentFragment, context: Record<string, any>) => {
   if (ComponentsRegistry.size === 0) return;
 
@@ -55,17 +81,22 @@ export const resolveComponents = (root: HTMLElement | DocumentFragment, context:
     }
 
     const children = Array.from(el.childNodes);
+    const slots = extractSlots(children);
 
-    let processedChildren = children;
-    if (children.length > 0) {
-      const childFragment = document.createDocumentFragment();
-      childFragment.append(...children);
-      processDirectives(childFragment, context);
-      processedChildren = Array.from(childFragment.childNodes);
+    for (const key of Object.keys(slots)) {
+      const slotChildren = slots[key];
+      if (slotChildren.length > 0) {
+        const childFragment = document.createDocumentFragment();
+        childFragment.append(...slotChildren);
+        processDirectives(childFragment, context);
+        slots[key] = Array.from(childFragment.childNodes);
+      }
     }
 
-    const template = renderFn(props, processedChildren);
+    const template = renderFn(props, slots);
     const fragment = createElementFromTemplate(template);
+
+    resolveSlots(fragment, slots);
 
     el.parentNode.replaceChild(fragment, el);
   }
