@@ -26,8 +26,9 @@ describe("component registration", () => {
   });
 
   it("defines and renders a simple component", () => {
-    defineComponent("my-counter", (props: any) =>
-      html`<span data-testid="counter">Count: ${props.initial}</span>`
+    defineComponent(
+      "my-counter",
+      (props: any) => html`<span data-testid="counter">Count: ${props.initial}</span>`
     );
 
     render(html`<my-counter initial="5" />`, "body");
@@ -36,8 +37,10 @@ describe("component registration", () => {
   });
 
   it("passes children to component", () => {
-    defineComponent("my-panel", (props: any, slots: any) =>
-      html`<div data-testid="panel" class=${props.type}>${slots.default}</div>`
+    defineComponent(
+      "my-panel",
+      (props: any, slots: any) =>
+        html`<div data-testid="panel" class=${props.type}>${slots.default}</div>`
     );
 
     render(
@@ -50,8 +53,9 @@ describe("component registration", () => {
   });
 
   it("resolves placeholder attribute values from context", () => {
-    defineComponent("my-greeting", (props: any) =>
-      html`<p data-testid="greeting">${props.name}</p>`
+    defineComponent(
+      "my-greeting",
+      (props: any) => html`<p data-testid="greeting">${props.name}</p>`
     );
 
     const name = "World";
@@ -61,18 +65,17 @@ describe("component registration", () => {
   });
 
   it("handles nested components", () => {
-    defineComponent("my-avatar", (props: any) =>
-      html`<span data-testid="avatar">${props.label}</span>`
+    defineComponent(
+      "my-avatar",
+      (props: any) => html`<span data-testid="avatar">${props.label}</span>`
     );
 
-    defineComponent("my-card", (_props: any, slots: any) =>
-      html`<div data-testid="card">${slots.default}</div>`
+    defineComponent(
+      "my-card",
+      (_props: any, slots: any) => html`<div data-testid="card">${slots.default}</div>`
     );
 
-    render(
-      html`<my-card><my-avatar label="User" /></my-card>`,
-      "body"
-    );
+    render(html`<my-card><my-avatar label="User" /></my-card>`, "body");
 
     expect(screen.getByTestId("card")).toBeInTheDocument();
     expect(screen.getByTestId("avatar")).toHaveTextContent("User");
@@ -87,9 +90,7 @@ describe("component registration", () => {
   });
 
   it("removeComponent prevents a component from rendering", () => {
-    defineComponent("my-temp", () =>
-      html`<span data-testid="temp">Temporary</span>`
-    );
+    defineComponent("my-temp", () => html`<span data-testid="temp">Temporary</span>`);
 
     render(html`<my-temp />`, "body");
     expect(screen.getByTestId("temp")).toBeInTheDocument();
@@ -105,8 +106,9 @@ describe("component registration", () => {
   });
 
   it("processes directives on component content", () => {
-    defineComponent("my-button", (props: any) =>
-      html`<button data-testid="btn" class=${props.kind}>${props.label}</button>`
+    defineComponent(
+      "my-button",
+      (props: any) => html`<button data-testid="btn" class=${props.kind}>${props.label}</button>`
     );
 
     render(html`<my-button kind="primary" label="Click" />`, "body");
@@ -126,8 +128,10 @@ describe("complex component scenarios", () => {
   });
 
   it("renders multiple component instances with different props", () => {
-    defineComponent("my-badge", (props: any) =>
-      html`<span data-testid=${"badge-" + props.id} class=${props.variant}>${props.label}</span>`
+    defineComponent(
+      "my-badge",
+      (props: any) =>
+        html`<span data-testid=${"badge-" + props.id} class=${props.variant}>${props.label}</span>`
     );
 
     render(
@@ -152,8 +156,9 @@ describe("complex component scenarios", () => {
   it("applies directives (class toggle, event listener) inside component output", () => {
     const onClick = vi.fn();
 
-    defineComponent("my-todo-item", (props: any) =>
-      html`
+    defineComponent(
+      "my-todo-item",
+      (props: any) => html`
         <li data-testid="item-${props.id}" class:[done|pending]=${props.done}>
           <span>${props.text}</span>
           <button data-testid="done-btn-${props.id}" onClick=${onClick}>Done</button>
@@ -183,15 +188,19 @@ describe("complex component scenarios", () => {
   });
 
   it("renders a component that internally uses other components (not just via children)", () => {
-    defineComponent("my-badge", (props: any) =>
-      html`<span data-testid="badge" class=${props.variant}>${props.label}</span>`
+    defineComponent(
+      "my-badge",
+      (props: any) => html`<span data-testid="badge" class=${props.variant}>${props.label}</span>`
     );
 
-    defineComponent("my-todo-list", (props: any) =>
-      html`
+    defineComponent(
+      "my-todo-list",
+      (props: any) => html`
         <div data-testid="list">
           <h3>${props.title} <my-badge variant="count" label=${props.count} /></h3>
-          <ul>${props.items}</ul>
+          <ul>
+            ${props.items}
+          </ul>
         </div>
       `
     );
@@ -215,8 +224,9 @@ describe("complex component scenarios", () => {
   it("passes a hook value as a component prop (static resolution) and updates on parent re-render", () => {
     const state = createHook({ name: "Alice" });
 
-    defineComponent("my-greeting", (props: any) =>
-      html`<p data-testid="greeting">Hello, ${props.name}!</p>`
+    defineComponent(
+      "my-greeting",
+      (props: any) => html`<p data-testid="greeting">Hello, ${props.name}!</p>`
     );
 
     const container = document.createElement("div");
@@ -237,8 +247,9 @@ describe("complex component scenarios", () => {
   it("renders component children that contain directives", () => {
     const onClick = vi.fn();
 
-    defineComponent("my-card", (_props: any, slots: any) =>
-      html`<div data-testid="card">${slots.default}</div>`
+    defineComponent(
+      "my-card",
+      (_props: any, slots: any) => html`<div data-testid="card">${slots.default}</div>`
     );
 
     render(
@@ -256,8 +267,9 @@ describe("complex component scenarios", () => {
   });
 
   it("targets named slots via <slot> elements and slot attribute", () => {
-    defineComponent("my-split", (_props: any, slots: any) =>
-      html`
+    defineComponent(
+      "my-split",
+      (_props: any, slots: any) => html`
         <div data-testid="split">
           <header><slot name="header"></slot></header>
           <main><slot></slot></main>
@@ -284,8 +296,9 @@ describe("complex component scenarios", () => {
   });
 
   it("uses fallback content when no matching slot children are provided", () => {
-    defineComponent("my-fallback", (_props: any, slots: any) =>
-      html`
+    defineComponent(
+      "my-fallback",
+      (_props: any, slots: any) => html`
         <div data-testid="fallback">
           <slot name="header"><h1>Default Header</h1></slot>
           <slot><p>Default body</p></slot>
@@ -300,8 +313,9 @@ describe("complex component scenarios", () => {
   });
 
   it("replaces fallback content when matching slot children exist", () => {
-    defineComponent("my-fallback", (_props: any, slots: any) =>
-      html`
+    defineComponent(
+      "my-fallback",
+      (_props: any, slots: any) => html`
         <div data-testid="replace">
           <slot name="header"><h1>Default Header</h1></slot>
           <slot><p>Default body</p></slot>
@@ -330,14 +344,21 @@ describe("complex component scenarios", () => {
       return html`<span data-testid="count">${slots.default ? slots.default.length : 0}</span>`;
     });
 
-    render(html`<my-inspector><p>A</p><p>B</p></my-inspector>`, "body");
+    render(
+      html`<my-inspector
+        ><p>A</p>
+        <p>B</p></my-inspector
+      >`,
+      "body"
+    );
 
     expect(screen.getByTestId("count")).toHaveTextContent("2");
   });
 
   it("uses slots at the component root without a wrapping element", () => {
-    defineComponent("my-skinny", (_props: any, slots: any) =>
-      html`<slot name="a"></slot><slot name="b"></slot>`
+    defineComponent(
+      "my-skinny",
+      (_props: any, slots: any) => html`<slot name="a"></slot><slot name="b"></slot>`
     );
 
     render(
@@ -357,11 +378,13 @@ describe("complex component scenarios", () => {
   });
 
   it("renders fallback content when named slot has no matching children", () => {
-    defineComponent("my-layout", (_props: any, slots: any) =>
-      html`<div data-testid="layout">
-        <slot name="header"><h1>Default Title</h1></slot>
-        ${slots.default}
-      </div>`
+    defineComponent(
+      "my-layout",
+      (_props: any, slots: any) =>
+        html`<div data-testid="layout">
+          <slot name="header"><h1>Default Title</h1></slot>
+          ${slots.default}
+        </div>`
     );
 
     render(html`<my-layout><p>body</p></my-layout>`, "body");
@@ -371,11 +394,13 @@ describe("complex component scenarios", () => {
   });
 
   it("removes <slot> element with no matching children and no fallback", () => {
-    defineComponent("my-empty", (_props: any, slots: any) =>
-      html`<div data-testid="empty">
-        <slot name="missing"></slot>
-        <span>content</span>
-      </div>`
+    defineComponent(
+      "my-empty",
+      (_props: any, slots: any) =>
+        html`<div data-testid="empty">
+          <slot name="missing"></slot>
+          <span>content</span>
+        </div>`
     );
 
     render(html`<my-empty></my-empty>`, "body");
@@ -385,18 +410,17 @@ describe("complex component scenarios", () => {
   });
 
   it("resolves nested component inside slot content", () => {
-    defineComponent("my-label", (props: any) =>
-      html`<span data-testid="label">${props.text}</span>`
+    defineComponent(
+      "my-label",
+      (props: any) => html`<span data-testid="label">${props.text}</span>`
     );
 
-    defineComponent("my-box", (_props: any, slots: any) =>
-      html`<div data-testid="box">${slots.default}</div>`
+    defineComponent(
+      "my-box",
+      (_props: any, slots: any) => html`<div data-testid="box">${slots.default}</div>`
     );
 
-    render(
-      html`<my-box><my-label text="nested" /></my-box>`,
-      "body"
-    );
+    render(html`<my-box><my-label text="nested" /></my-box>`, "body");
 
     expect(screen.getByTestId("box")).toBeInTheDocument();
     expect(screen.getByTestId("label")).toHaveTextContent("nested");
@@ -405,8 +429,10 @@ describe("complex component scenarios", () => {
   it("processes directives on named slot children", () => {
     const onClick = vi.fn();
 
-    defineComponent("my-actions", (_props: any, slots: any) =>
-      html`<div data-testid="actions"><slot name="buttons"></slot></div>`
+    defineComponent(
+      "my-actions",
+      (_props: any, slots: any) =>
+        html`<div data-testid="actions"><slot name="buttons"></slot></div>`
     );
 
     render(
@@ -423,12 +449,14 @@ describe("complex component scenarios", () => {
   });
 
   it("targets slot with a custom component child via slot attribute", () => {
-    defineComponent("my-child", (props: any) =>
-      html`<span data-testid="child">${props.text}</span>`
+    defineComponent(
+      "my-child",
+      (props: any) => html`<span data-testid="child">${props.text}</span>`
     );
 
-    defineComponent("my-parent", (_props: any, slots: any) =>
-      html`<div data-testid="parent"><slot name="child"></slot></div>`
+    defineComponent(
+      "my-parent",
+      (_props: any, slots: any) => html`<div data-testid="parent"><slot name="child"></slot></div>`
     );
 
     render(
@@ -453,8 +481,9 @@ describe("direct component registration", () => {
   });
 
   it("registers a component via defineComponent", () => {
-    defineComponent("my-header", (props: any) =>
-      html`<h1 data-testid="header">${props.title}</h1>`
+    defineComponent(
+      "my-header",
+      (props: any) => html`<h1 data-testid="header">${props.title}</h1>`
     );
 
     render(html`<my-header title="Hello" />`, "body");
@@ -479,9 +508,7 @@ describe("console warnings", () => {
 
     render(html`<my-unknown>content</my-unknown>`, "body");
 
-    expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining("my-unknown")
-    );
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("my-unknown"));
 
     warn.mockRestore();
   });

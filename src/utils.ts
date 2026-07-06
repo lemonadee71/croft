@@ -51,25 +51,22 @@ export const isNullOrUndefined = (value: any): value is null | undefined =>
   value === null || value === undefined;
 
 export const isObject = (value: any): value is object =>
-  typeof value === 'object' && value !== null;
+  typeof value === "object" && value !== null;
 
-export const isFunction = (value: any): value is Function =>
-  typeof value === 'function';
+export const isFunction = (value: any): value is Function => typeof value === "function";
 
-export const isString = (value: any): value is string =>
-  typeof value === 'string';
+export const isString = (value: any): value is string => typeof value === "string";
 
-export const isArray = (value: any): value is any[] =>
-  Array.isArray(value);
+export const isArray = (value: any): value is any[] => Array.isArray(value);
 
 export const isPlainObject = (value: any): value is Record<string, any> => {
-  if (typeof value !== 'object' || value === null) return false;
+  if (typeof value !== "object" || value === null) return false;
   const proto = Object.getPrototypeOf(value);
   return proto === null || proto === Object.prototype;
 };
 
 export const isNumber = (value: any): value is number =>
-  typeof value === 'number' && !Number.isNaN(value);
+  typeof value === "number" && !Number.isNaN(value);
 
 export const isNode = (value: any): value is Node => value instanceof Node;
 
@@ -183,8 +180,6 @@ export const compose = (...fns: Function[]): Function => {
 };
 
 export const resolve = (value: any, fn: Function | null = null): any => (fn ? fn(value) : value);
-
-
 
 // DOM Helpers
 export const getChildNodes = (parent: Node): Node[] => Array.from(parent.childNodes);

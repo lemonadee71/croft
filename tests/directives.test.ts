@@ -280,7 +280,14 @@ describe(":visible", () => {
 describe("directives robustness", () => {
   it("combines static classes, class object, and class:name directives correctly", () => {
     const isError = createHook(false);
-    render(html`<div class="base-class" class=${{ active: true }} class:error=${isError.$value} data-target></div>`);
+    render(
+      html`<div
+        class="base-class"
+        class=${{ active: true }}
+        class:error=${isError.$value}
+        data-target
+      ></div>`
+    );
 
     expect(target()).toHaveClass("base-class", "active");
     expect(target()).not.toHaveClass("error");

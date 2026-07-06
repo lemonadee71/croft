@@ -24,11 +24,13 @@ import {
 } from "./utils";
 
 import { watch } from "./hooks";
-import { BuiltinDirectives, DirectivesRegistry, getTypeOfAttrName, getTypeOfKey } from "./directives";
 import {
-  runLifecycle,
-  triggerLifecycle,
-} from "./lifecycle";
+  BuiltinDirectives,
+  DirectivesRegistry,
+  getTypeOfAttrName,
+  getTypeOfKey,
+} from "./directives";
+import { runLifecycle, triggerLifecycle } from "./lifecycle";
 
 // ============= RESOLVE BODY =============
 
@@ -88,8 +90,7 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
           }
 
           element.removeAttribute(rawName);
-        }
-        else {
+        } else {
           const [type, attrName] = getTypeOfAttrName(rawName);
           const match = rawValue.match(PLACEHOLDER_REGEX);
           const value = match ? values[getPlaceholderId(match[0])] : rawValue;
@@ -206,7 +207,10 @@ export const createElementFromTemplate = (template: Template): DocumentFragment 
  * Traverses a root element and processes placeholders/directives using values context.
  * Component resolution is handled separately by the caller.
  */
-export const processDirectives = (root: HTMLElement | DocumentFragment, context: Record<string, any>) => {
+export const processDirectives = (
+  root: HTMLElement | DocumentFragment,
+  context: Record<string, any>
+) => {
   const fns: Array<(root: HTMLElement | DocumentFragment, context: Record<string, any>) => void> = [
     resolveBody,
   ];
@@ -214,7 +218,7 @@ export const processDirectives = (root: HTMLElement | DocumentFragment, context:
   fns.push(
     (r, c) => runLifecycle("beforeHydrate", r, c),
     resolveAttributes,
-    (r, c) => runLifecycle("afterHydrate", r, c),
+    (r, c) => runLifecycle("afterHydrate", r, c)
   );
 
   for (const fn of fns) fn(root, context);
@@ -246,7 +250,7 @@ export const modifyElement = (
   context: Document | HTMLElement | DocumentFragment = document
 ): Element | null => {
   const element: Element | null =
-    target instanceof Element ? target : (context as any).querySelector(target) ?? null;
+    target instanceof Element ? target : ((context as any).querySelector(target) ?? null);
 
   if (!element) return null;
 

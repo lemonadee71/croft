@@ -34,10 +34,7 @@ export const removeLifecycle = (type: keyof LifecycleHooks, callback: Function) 
  */
 export const runLifecycle = (type: keyof LifecycleHooks, ...args: any[]): any => {
   if (type === "beforeCreate") {
-    return lifecycleHooks.beforeCreate.reduce(
-      (result, fn) => fn(result),
-      args[0]
-    );
+    return lifecycleHooks.beforeCreate.reduce((result, fn) => fn(result), args[0]);
   }
 
   lifecycleHooks[type].forEach((fn) => fn(...args));
@@ -51,8 +48,12 @@ const OBSERVER_CONFIG = { childList: true, subtree: true };
 // Module-level references to avoid jsdom MutationObserver scope issues
 let _Event: typeof Event;
 let _document: Document;
-try { _Event = Event } catch {}
-try { _document = document } catch {}
+try {
+  _Event = Event;
+} catch {}
+try {
+  _document = document;
+} catch {}
 
 export const triggerLifecycle = (type: string, root: Element) => {
   traverse(root, (node) => node.dispatchEvent(new _Event(`@${type}`)));

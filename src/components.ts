@@ -45,36 +45,47 @@ const extractSlots = (children: Node[]): Record<string, Node[]> => {
 
 const resolveSlots = (fragment: DocumentFragment, slots: Record<string, Node[]>) => {
   for (const child of getChildren(fragment)) {
-    traverse(child, (el) => {
-      if (el.tagName?.toLowerCase() === "slot") {
-        const name = el.getAttribute("name") || "default";
-        const matchingChildren = slots[name];
-        if (matchingChildren && matchingChildren.length > 0) {
-          el.replaceWith(...matchingChildren);
-        } else {
-          const fallback = Array.from(el.childNodes);
-          if (fallback.length > 0) {
-            el.replaceWith(...fallback);
+    traverse(
+      child,
+      (el) => {
+        if (el.tagName?.toLowerCase() === "slot") {
+          const name = el.getAttribute("name") || "default";
+          const matchingChildren = slots[name];
+          if (matchingChildren && matchingChildren.length > 0) {
+            el.replaceWith(...matchingChildren);
           } else {
-            el.remove();
+            const fallback = Array.from(el.childNodes);
+            if (fallback.length > 0) {
+              el.replaceWith(...fallback);
+            } else {
+              el.remove();
+            }
           }
         }
-      }
-    }, true);
+      },
+      true
+    );
   }
 };
 
-export const resolveComponents = (root: HTMLElement | DocumentFragment, context: Record<string, any>) => {
+export const resolveComponents = (
+  root: HTMLElement | DocumentFragment,
+  context: Record<string, any>
+) => {
   if (ComponentsRegistry.size === 0) return;
 
   const customElements: Element[] = [];
 
   for (const child of getChildren(root)) {
-    traverse(child, (el) => {
-      if (ComponentsRegistry.has(el.tagName.toLowerCase())) {
-        customElements.push(el);
-      }
-    }, true);
+    traverse(
+      child,
+      (el) => {
+        if (ComponentsRegistry.has(el.tagName.toLowerCase())) {
+          customElements.push(el);
+        }
+      },
+      true
+    );
   }
 
   for (const el of customElements) {
@@ -119,14 +130,18 @@ export const resolveComponents = (root: HTMLElement | DocumentFragment, context:
 /** Warns about unregistered custom elements remaining in the DOM after resolution. */
 export const warnUnregistered = (root: HTMLElement | DocumentFragment) => {
   for (const child of getChildren(root)) {
-    traverse(child, (el) => {
-      const tagName = el.tagName.toLowerCase();
-      if (tagName.includes("-") && !ComponentsRegistry.has(tagName)) {
-        console.warn(
-          `[peasant-jsx] Unregistered custom element: <${tagName}>. ` +
-          `Did you forget to call defineComponent("${tagName}", ...)?`
-        );
-      }
-    }, true);
+    traverse(
+      child,
+      (el) => {
+        const tagName = el.tagName.toLowerCase();
+        if (tagName.includes("-") && !ComponentsRegistry.has(tagName)) {
+          console.warn(
+            `[peasant-jsx] Unregistered custom element: <${tagName}>. ` +
+              `Did you forget to call defineComponent("${tagName}", ...)?`
+          );
+        }
+      },
+      true
+    );
   }
 };

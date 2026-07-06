@@ -82,7 +82,10 @@ const toPredicate = (
 const normalizeMatch = (
   type: string,
   match?: MatchRule
-): { attrName: (key: string) => [string, string] | null; objKey: (key: string) => [string, string] | null } => {
+): {
+  attrName: (key: string) => [string, string] | null;
+  objKey: (key: string) => [string, string] | null;
+} => {
   if (match === undefined) {
     const pred = toPredicate(type);
     return { attrName: pred, objKey: pred };
@@ -274,7 +277,7 @@ export const BuiltinDirectives: RegistryEntry[] = [
     type: "toggle",
     match: (key) => {
       const [k] = key.split(".");
-      return (BOOLEAN_ATTRS.includes(k) || k.startsWith("toggle:"))
+      return BOOLEAN_ATTRS.includes(k) || k.startsWith("toggle:")
         ? key.replace("toggle:", "")
         : false;
     },

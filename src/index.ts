@@ -8,10 +8,7 @@ import {
   disableLifecycle,
   enableLifecycle,
 } from "./lifecycle";
-import {
-  html,
-  render,
-} from "./renderer";
+import { html, render } from "./renderer";
 import {
   applyProps,
   createElementFromTemplate,
