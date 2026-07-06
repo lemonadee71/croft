@@ -138,7 +138,7 @@ import PoorManJSX from "peasant-jsx";
 
 PoorManJSX.addDirective({
   type: "tooltip",
-  predicate: (key) => key === ":tooltip",
+  match: ":tooltip",
   callback: (element, data) => {
     element.setAttribute("title", data.value);
     element.classList.add("has-tooltip");
@@ -148,6 +148,17 @@ PoorManJSX.addDirective({
 // Usage in HTML:
 html`<span :tooltip="Helpful information">Hover me</span>`
 ```
+
+The `match` field accepts several forms:
+
+| Form | Behavior |
+| :--- | :--- |
+| Omitted | Exact match on `type` for both HTML attrs and object keys |
+| `match: ":foo"` | Exact match on `:foo` for both contexts |
+| `match: (key) => key.endsWith("foo")` | Custom matcher for both contexts |
+| `match: { attrName: ":foo", objKey: "foo" }` | Separate matchers per context |
+
+The predicate function returns the matched key as a string, `false` for no match, or `[type, key]` for advanced overrides.
 
 ---
 
@@ -214,7 +225,12 @@ Components can be registered via `defineComponent` or the plugin mount system:
 ```typescript
 import { defineComponent, html } from "peasant-jsx";
 
-defineComponent("my-greeting", (props: any, slots: Record<string, Node[]>) => {
+// Generic props type for type safety
+interface GreetingProps {
+  name: string;
+}
+
+defineComponent<GreetingProps>("my-greeting", (props, slots) => {
   return html`<h1>Hello, ${props.name}!</h1>`;
 });
 ```
@@ -235,11 +251,11 @@ PoorManJSX.mount("components", {
 ### Component Signature
 
 ```
-(props: Record<string, any>, slots: Record<string, Node[]>) => Template
+<P extends Record<string, any>>(props: P, slots: Record<string, Node[]>) => Template
 ```
 
 - **props** — Object of resolved attribute values. Static strings passed through; dynamic values (placeholders, hooks) resolved before reaching the component.
-- **slots** — Object of named child node arrays. Children with a `slot="name"` attribute go into `slots.name`; children without go into `slots.default`. All children are processed through the directive pipeline before reaching the component.
+- **slots** — Object of named child node arrays. Children with a `slot="name"` attribute go into `slots.name`; children without go into `slots.default`. All children are processed through the directive pipeline and component resolution before reaching the component.
 
 ### Usage in Templates
 
@@ -334,16 +350,16 @@ defineComponent("my-inspector", (_props: any, slots: any) =>
 
 ### How It Works
 
-Components are resolved in **phase 2** of the rendering pipeline (after `resolveBody`, before `resolveAttributes`):
+Component resolution runs **after** the standard directive pipeline, meaning basic directives (body, attributes, lifecycle) are applied to the top-level fragment first, then components are resolved top-down:
 
-1. The DOM is walked bottom-up (innermost components first).
-2. Each registered custom element has its attributes collected and resolved into a props object.
-3. Child DOM nodes are extracted and bucketed into named slots by the `slot` attribute (`slots.default` for unnamed children).
-4. Each slot bucket's children are processed through the full directive pipeline (listeners, class toggles, nested components all work).
-5. The component's render function is called with `(props, slots)`.
-6. The returned Template is compiled through `createElementFromTemplate` — its own content goes through the full pipeline independently, including nested component resolution.
-7. `<slot>` elements in the fragment are resolved: each slot is replaced with its matching children (or its fallback content if none match).
-8. The custom element is replaced with the rendered fragment.
-9. The already-hydrated content is skipped by subsequent pipeline phases.
+1. The fragment is compiled through the standard pipeline (`resolveBody` → hydrate lifecycles → `resolveAttributes`).
+2. `resolveComponents` walks the DOM top-down, identifying registered custom elements.
+3. Each registered custom element has its attributes collected and resolved into a props object.
+4. Child DOM nodes are extracted and bucketed into named slots by the `slot` attribute (`slots.default` for unnamed children).
+5. Each slot bucket's children are processed through the full pipeline (directives + nested component resolution).
+6. The component's render function is called with `(props, slots)`.
+7. The returned Template is compiled through `createElementFromTemplate`, then `resolveComponents` is called on the result — its own content goes through the full pipeline independently, including nested component resolution.
+8. `<slot>` elements in the fragment are resolved: each slot is replaced with its matching children (or its fallback content if none match).
+9. The custom element is replaced with the rendered fragment.
 
-Because components are compiled through the standard pipeline, they support all built-in directives, lifecycle events, slots, and nested components.
+Because components are compiled through the standard pipeline, they support all built-in directives, lifecycle events, slots, and nested components. Unregistered custom tags are reported via `console.warn` automatically.
