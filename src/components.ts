@@ -1,13 +1,19 @@
 import { PLACEHOLDER_REGEX, getChildren, traverse, getPlaceholderId, isHook } from "./utils";
-import { createElementFromTemplate, processDirectives } from "./renderer";
+import { createElementFromTemplate, processDirectives } from "./pipeline";
 import type { Template } from "./utils";
 
-export type ComponentRenderer = (props: Record<string, any>, slots: Record<string, Node[]>) => Template;
+export type ComponentRenderer<P extends Record<string, any> = Record<string, any>> = (
+  props: P,
+  slots: Record<string, Node[]>
+) => Template;
 
 export const ComponentsRegistry = new Map<string, ComponentRenderer>();
 
-export const defineComponent = (name: string, renderFn: ComponentRenderer) => {
-  ComponentsRegistry.set(name, renderFn);
+export const defineComponent = <P extends Record<string, any> = Record<string, any>>(
+  name: string,
+  renderFn: ComponentRenderer<P>
+) => {
+  ComponentsRegistry.set(name, renderFn as ComponentRenderer);
 };
 
 export const removeComponent = (name: string) => {
@@ -93,6 +99,7 @@ export const resolveComponents = (root: HTMLElement | DocumentFragment, context:
         const childFragment = document.createDocumentFragment();
         childFragment.append(...slotChildren);
         processDirectives(childFragment, context);
+        resolveComponents(childFragment, context);
         slots[key] = Array.from(childFragment.childNodes);
       }
     }
@@ -100,8 +107,26 @@ export const resolveComponents = (root: HTMLElement | DocumentFragment, context:
     const template = renderFn(props, slots);
     const fragment = createElementFromTemplate(template);
 
+    resolveComponents(fragment, context);
     resolveSlots(fragment, slots);
 
     el.parentNode.replaceChild(fragment, el);
+  }
+
+  warnUnregistered(root);
+};
+
+/** Warns about unregistered custom elements remaining in the DOM after resolution. */
+export const warnUnregistered = (root: HTMLElement | DocumentFragment) => {
+  for (const child of getChildren(root)) {
+    traverse(child, (el) => {
+      const tagName = el.tagName.toLowerCase();
+      if (tagName.includes("-") && !ComponentsRegistry.has(tagName)) {
+        console.warn(
+          `[peasant-jsx] Unregistered custom element: <${tagName}>. ` +
+          `Did you forget to call defineComponent("${tagName}", ...)?`
+        );
+      }
+    }, true);
   }
 };

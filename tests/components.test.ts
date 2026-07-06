@@ -445,22 +445,44 @@ describe("complex component scenarios", () => {
   });
 });
 
-describe("plugin-based component registration via mount", () => {
+describe("direct component registration", () => {
   useTestScope();
 
   afterEach(() => {
-    delete (PoorManJSX as any).plugins.components;
     removeComponent("my-header");
   });
 
-  it("registers components via PoorManJSX.mount", () => {
-    PoorManJSX.mount("components", {
-      "my-header": (props: any) =>
-        html`<h1 data-testid="header">${props.title}</h1>`,
-    });
+  it("registers a component via defineComponent", () => {
+    defineComponent("my-header", (props: any) =>
+      html`<h1 data-testid="header">${props.title}</h1>`
+    );
 
     render(html`<my-header title="Hello" />`, "body");
 
     expect(screen.getByTestId("header")).toHaveTextContent("Hello");
+  });
+
+  it("mount stores plugin config but does not register components", () => {
+    const fn = vi.fn();
+    PoorManJSX.mount("myPlugin", { value: 42, _init: fn });
+
+    expect((PoorManJSX as any).plugins.myPlugin).toEqual({ value: 42 });
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("console warnings", () => {
+  useTestScope();
+
+  it("warns about unregistered custom elements", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    render(html`<my-unknown>content</my-unknown>`, "body");
+
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("my-unknown")
+    );
+
+    warn.mockRestore();
   });
 });

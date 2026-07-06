@@ -1,4 +1,4 @@
-import { traverse, inTheDocument } from "./utils";
+import { traverse } from "./utils";
 
 export interface LifecycleHooks {
   beforeCreate: Function[];
@@ -48,25 +48,33 @@ export const runLifecycle = (type: keyof LifecycleHooks, ...args: any[]): any =>
 let observer: MutationObserver | null = null;
 const OBSERVER_CONFIG = { childList: true, subtree: true };
 
+// Module-level references to avoid jsdom MutationObserver scope issues
+let _Event: typeof Event;
+let _document: Document;
+try { _Event = Event } catch {}
+try { _document = document } catch {}
+
 export const triggerLifecycle = (type: string, root: Element) => {
-  traverse(root, (node) => node.dispatchEvent(new Event(`@${type}`)));
+  traverse(root, (node) => node.dispatchEvent(new _Event(`@${type}`)));
 };
+
+const inDocument = (node: Node): boolean => !!_document?.body?.contains(node);
 
 export const mutationCallback = (mutations: MutationRecord[]) => {
   mutations.forEach((mutation) => {
     if (mutation.type === "childList") {
       mutation.addedNodes.forEach((node) => {
-        if (node instanceof Element) {
-          triggerLifecycle("mount", node);
+        if (node.nodeType === 1) {
+          triggerLifecycle("mount", node as Element);
         }
       });
 
       mutation.removedNodes.forEach((node) => {
-        if (node instanceof Element) {
-          triggerLifecycle("unmount", node);
+        if (node.nodeType === 1) {
+          triggerLifecycle("unmount", node as Element);
 
-          if (!inTheDocument(node)) {
-            triggerLifecycle("destroy", node);
+          if (!inDocument(node)) {
+            triggerLifecycle("destroy", node as Element);
           }
         }
       });

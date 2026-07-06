@@ -187,8 +187,6 @@ export const resolve = (value: any, fn: Function | null = null): any => (fn ? fn
 
 
 // DOM Helpers
-export const inTheDocument = (node: Node): boolean => document.body.contains(node);
-
 export const getChildNodes = (parent: Node): Node[] => Array.from(parent.childNodes);
 
 export const getChildren = (parent: ParentNode): Element[] => Array.from(parent.children);

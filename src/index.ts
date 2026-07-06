@@ -1,6 +1,6 @@
 import { createHook, watch, unwatch } from "./hooks";
 import { addDirective, removeDirective } from "./directives";
-import { defineComponent, removeComponent, ComponentsRegistry, type ComponentRenderer } from "./components";
+import { defineComponent, removeComponent, type ComponentRenderer } from "./components";
 import {
   onLifecycle,
   removeLifecycle,
@@ -8,21 +8,16 @@ import {
   disableLifecycle,
   enableLifecycle,
 } from "./lifecycle";
-
-// Start DOM mutation observer lifecycles automatically (safe if DOM is unavailable)
-try {
-  enableLifecycle();
-} catch {
-  // Not in a browser environment — lifecycle disabled by default
-}
 import {
   html,
   render,
+} from "./renderer";
+import {
   applyProps,
   createElementFromTemplate,
   processDirectives,
   modifyElement,
-} from "./renderer";
+} from "./pipeline";
 import {
   uid,
   hash,
@@ -48,6 +43,13 @@ import {
   isHook,
 } from "./utils";
 
+// Start DOM mutation observer lifecycles automatically (safe if DOM is unavailable)
+try {
+  enableLifecycle();
+} catch {
+  // Not in a browser environment — lifecycle disabled by default
+}
+
 export {
   html,
   render,
@@ -61,6 +63,8 @@ export {
   defineComponent,
   removeComponent,
 };
+
+export type { ComponentRenderer };
 
 /**
  * Global configuration and plugin entry point for peasant-jsx.
@@ -80,12 +84,6 @@ const PoorManJSX = {
     delete copy._init;
     this.plugins[name] = copy;
     config._init?.call?.(this);
-
-    if (name === "components") {
-      for (const [tagName, renderFn] of Object.entries(copy)) {
-        ComponentsRegistry.set(tagName, renderFn as ComponentRenderer);
-      }
-    }
   },
 
   /** Registers custom directives. */
