@@ -1,5 +1,6 @@
 import { screen } from "@testing-library/dom";
 import PoorManJSX, { render } from "../src";
+import { enableLifecycle, disableLifecycle } from "../src/lifecycle";
 
 export const defer = (fn: () => void): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
@@ -22,9 +23,11 @@ const toTestId = (str: string) => str.replace(/data-target/g, 'data-testid="targ
 
 export const setup = () => {
   PoorManJSX.onLifecycle("beforeCreate", toTestId);
+  enableLifecycle();
 };
 
 export const teardown = () => {
+  disableLifecycle();
   PoorManJSX.removeLifecycle("beforeCreate", toTestId);
   document.body.innerHTML = "";
   vi.clearAllMocks();

@@ -1,6 +1,6 @@
 import { createHook, watch, unwatch } from "./hooks";
 import { addDirective, removeDirective } from "./directives";
-import { defineComponent, removeComponent, ComponentsRegistry } from "./components";
+import { defineComponent, removeComponent, ComponentsRegistry, type ComponentRenderer } from "./components";
 import {
   onLifecycle,
   removeLifecycle,
@@ -8,6 +8,13 @@ import {
   disableLifecycle,
   enableLifecycle,
 } from "./lifecycle";
+
+// Start DOM mutation observer lifecycles automatically (safe if DOM is unavailable)
+try {
+  enableLifecycle();
+} catch {
+  // Not in a browser environment — lifecycle disabled by default
+}
 import {
   html,
   render,
@@ -40,9 +47,6 @@ import {
   isTruthy,
   isHook,
 } from "./utils";
-
-// Start DOM mutation observer lifecycles automatically
-enableLifecycle();
 
 export {
   html,
@@ -79,7 +83,7 @@ const PoorManJSX = {
 
     if (name === "components") {
       for (const [tagName, renderFn] of Object.entries(copy)) {
-        ComponentsRegistry.set(tagName, renderFn as Function);
+        ComponentsRegistry.set(tagName, renderFn as ComponentRenderer);
       }
     }
   },

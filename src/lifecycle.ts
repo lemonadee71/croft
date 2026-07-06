@@ -78,6 +78,7 @@ export const mutationCallback = (mutations: MutationRecord[]) => {
  * Enables DOM MutationObserver lifecycles (@mount, @unmount, @destroy).
  */
 export const enableLifecycle = () => {
+  if (observer) observer.disconnect();
   observer = new MutationObserver(mutationCallback);
   observer.observe(document.body, OBSERVER_CONFIG);
 };

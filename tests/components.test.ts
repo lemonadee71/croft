@@ -11,6 +11,11 @@ describe("component registration", () => {
     removeComponent("my-avatar");
     removeComponent("my-card");
     removeComponent("my-button");
+    removeComponent("my-temp");
+    removeComponent("my-layout");
+    removeComponent("my-empty");
+    removeComponent("my-box");
+    removeComponent("my-label");
   });
 
   it("ignores slot attribute on regular elements outside components", () => {
@@ -71,6 +76,32 @@ describe("component registration", () => {
 
     expect(screen.getByTestId("card")).toBeInTheDocument();
     expect(screen.getByTestId("avatar")).toHaveTextContent("User");
+  });
+
+  it("leaves unregistered custom element tags in the DOM", () => {
+    render(html`<my-unknown data-testid="unknown">content</my-unknown>`, "body");
+    const el = screen.getByTestId("unknown");
+    expect(el).toBeInTheDocument();
+    expect(el.tagName.toLowerCase()).toBe("my-unknown");
+    expect(el).toHaveTextContent("content");
+  });
+
+  it("removeComponent prevents a component from rendering", () => {
+    defineComponent("my-temp", () =>
+      html`<span data-testid="temp">Temporary</span>`
+    );
+
+    render(html`<my-temp />`, "body");
+    expect(screen.getByTestId("temp")).toBeInTheDocument();
+
+    removeComponent("my-temp");
+
+    // Clear previous render output and re-render — tag should remain as unknown element
+    document.body.innerHTML = "";
+    render(html`<my-temp />`, "body");
+    const els = document.body.querySelectorAll("my-temp");
+    expect(els.length).toBe(1);
+    expect(screen.queryByTestId("temp")).not.toBeInTheDocument();
   });
 
   it("processes directives on component content", () => {
@@ -325,6 +356,52 @@ describe("complex component scenarios", () => {
     expect(screen.getByTestId("b")).toHaveTextContent("B");
   });
 
+  it("renders fallback content when named slot has no matching children", () => {
+    defineComponent("my-layout", (_props: any, slots: any) =>
+      html`<div data-testid="layout">
+        <slot name="header"><h1>Default Title</h1></slot>
+        ${slots.default}
+      </div>`
+    );
+
+    render(html`<my-layout><p>body</p></my-layout>`, "body");
+
+    expect(screen.getByTestId("layout")).toContainHTML("<h1>Default Title</h1>");
+    expect(screen.getByTestId("layout")).toHaveTextContent("body");
+  });
+
+  it("removes <slot> element with no matching children and no fallback", () => {
+    defineComponent("my-empty", (_props: any, slots: any) =>
+      html`<div data-testid="empty">
+        <slot name="missing"></slot>
+        <span>content</span>
+      </div>`
+    );
+
+    render(html`<my-empty></my-empty>`, "body");
+
+    expect(screen.getByTestId("empty").querySelector("slot")).toBeNull();
+    expect(screen.getByTestId("empty")).toHaveTextContent("content");
+  });
+
+  it("resolves nested component inside slot content", () => {
+    defineComponent("my-label", (props: any) =>
+      html`<span data-testid="label">${props.text}</span>`
+    );
+
+    defineComponent("my-box", (_props: any, slots: any) =>
+      html`<div data-testid="box">${slots.default}</div>`
+    );
+
+    render(
+      html`<my-box><my-label text="nested" /></my-box>`,
+      "body"
+    );
+
+    expect(screen.getByTestId("box")).toBeInTheDocument();
+    expect(screen.getByTestId("label")).toHaveTextContent("nested");
+  });
+
   it("processes directives on named slot children", () => {
     const onClick = vi.fn();
 
@@ -343,6 +420,28 @@ describe("complex component scenarios", () => {
 
     screen.getByTestId("btn").click();
     expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("targets slot with a custom component child via slot attribute", () => {
+    defineComponent("my-child", (props: any) =>
+      html`<span data-testid="child">${props.text}</span>`
+    );
+
+    defineComponent("my-parent", (_props: any, slots: any) =>
+      html`<div data-testid="parent"><slot name="child"></slot></div>`
+    );
+
+    render(
+      html`
+        <my-parent>
+          <my-child slot="child" text="slotted" />
+        </my-parent>
+      `,
+      "body"
+    );
+
+    expect(screen.getByTestId("parent")).toBeInTheDocument();
+    expect(screen.getByTestId("child")).toHaveTextContent("slotted");
   });
 });
 

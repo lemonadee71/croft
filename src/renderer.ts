@@ -71,7 +71,7 @@ export const html = (fragments: TemplateStringsArray, ...values: any[]): Templat
  * @param template The peasant-jsx Template object to compile.
  * @param target Optional selector string or HTMLElement to append the rendered template to.
  */
-export const render = (template: Template, target?: string | HTMLElement): any => {
+export const render = (template: Template, target?: string | HTMLElement): DocumentFragment => {
   const fragment = createElementFromTemplate(template);
 
   if (target) {
@@ -80,7 +80,6 @@ export const render = (template: Template, target?: string | HTMLElement): any =
       throw new Error("Target is not a valid HTMLElement");
     }
     parent.append(fragment);
-    return parent;
   }
 
   return fragment;
@@ -112,7 +111,7 @@ export const createElementFromTemplate = (template: Template): DocumentFragment 
 export const processDirectives = (root: HTMLElement | DocumentFragment, context: Record<string, any>) => {
   const fns = [resolveBody, resolveComponents, runLifecycle.bind(null, "beforeHydrate"), resolveAttributes, runLifecycle.bind(null, "afterHydrate")];
 
-  for (const fn of fns) fn.call(null, root, context);
+  for (const fn of fns) fn(root, context);
 };
 
 const resolveBody = (root: HTMLElement | DocumentFragment, values: Record<string, any>) => {
@@ -289,25 +288,25 @@ export const applyProps = (element: HTMLElement, changes: Record<string, any>): 
  * @param context Optional context node for query selection.
  */
 export const modifyElement = (
-  target: any,
+  target: Element | string,
   type: string,
   data: { key: any; value: any },
   context: Document | HTMLElement | DocumentFragment = document
-): HTMLElement => {
-  const element =
-    isElement(target) || isSVG(target) ? target : (context as any).querySelector(target);
+): Element | null => {
+  const element: Element | null =
+    target instanceof Element ? target : (context as any).querySelector(target) ?? null;
 
-  if (!element) return target;
+  if (!element) return null;
 
   const builtin = BuiltinDirectives.find((dir) => dir.type === type);
   if (builtin) {
-    builtin.callback(element, data, modifyElement);
+    builtin.callback(element as HTMLElement, data, modifyElement);
     return element;
   }
 
   const custom = DirectivesRegistry.get(type);
   if (custom) {
-    custom.callback(element, data, modifyElement);
+    custom.callback(element as HTMLElement, data, modifyElement);
     return element;
   }
 

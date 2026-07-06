@@ -1,9 +1,12 @@
 import { PLACEHOLDER_REGEX, getChildren, traverse, getPlaceholderId, isHook } from "./utils";
 import { createElementFromTemplate, processDirectives } from "./renderer";
+import type { Template } from "./utils";
 
-export const ComponentsRegistry = new Map<string, Function>();
+export type ComponentRenderer = (props: Record<string, any>, slots: Record<string, Node[]>) => Template;
 
-export const defineComponent = (name: string, renderFn: Function) => {
+export const ComponentsRegistry = new Map<string, ComponentRenderer>();
+
+export const defineComponent = (name: string, renderFn: ComponentRenderer) => {
   ComponentsRegistry.set(name, renderFn);
 };
 
@@ -12,23 +15,24 @@ export const removeComponent = (name: string) => {
 };
 
 const resolvePropValue = (value: any): any => {
-  if (isHook(value)) return (value as any).data?.value;
+  if (isHook(value)) return (value as { data?: { value?: any } }).data?.value;
   return value;
 };
 
 const extractSlots = (children: Node[]): Record<string, Node[]> => {
   const slots: Record<string, Node[]> = {};
   for (const child of children) {
-    const el = child as Element;
-    const slotAttr = el.getAttribute?.("slot");
-    if (slotAttr) {
-      el.removeAttribute("slot");
-      if (!slots[slotAttr]) slots[slotAttr] = [];
-      slots[slotAttr].push(child);
-    } else {
-      if (!slots.default) slots.default = [];
-      slots.default.push(child);
+    if (child instanceof Element) {
+      const slotAttr = child.getAttribute("slot");
+      if (slotAttr) {
+        child.removeAttribute("slot");
+        if (!slots[slotAttr]) slots[slotAttr] = [];
+        slots[slotAttr].push(child);
+        continue;
+      }
     }
+    if (!slots.default) slots.default = [];
+    slots.default.push(child);
   }
   return slots;
 };
@@ -64,7 +68,7 @@ export const resolveComponents = (root: HTMLElement | DocumentFragment, context:
       if (ComponentsRegistry.has(el.tagName.toLowerCase())) {
         customElements.push(el);
       }
-    }, false);
+    }, true);
   }
 
   for (const el of customElements) {
