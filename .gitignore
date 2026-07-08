@@ -31,6 +31,9 @@ coverage/
 *.swo
 *~
 
+# Generated example build (into docs public dir)
+docs/public/example/
+
 # TypeScript
 *.tsbuildinfo
 

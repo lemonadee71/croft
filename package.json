@@ -2,7 +2,15 @@
   "name": "croft",
   "version": "1.0.0",
   "description": "A lightweight, decoupled, native DOM reactive templating engine",
+  "homepage": "https://lemonadee71.github.io/croft",
+  "bugs": {
+    "url": "https://github.com/lemonadee71/croft/issues"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lemonadee71/croft.git"
+  },
   "files": [
     "dist",
     "README.md"
@@ -22,7 +30,10 @@
     "lint": "oxlint src tests",
     "format": "oxfmt --write src tests",
     "prepublishOnly": "pnpm build",
-    "release": "semantic-release"
+    "release": "semantic-release",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "pnpm build && pnpm --filter example build && pnpm --filter docs build",
+    "example:dev": "pnpm --filter example dev"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
