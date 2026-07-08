@@ -64,14 +64,14 @@ export {
 export type { ComponentRenderer };
 
 /**
- * Global configuration and plugin entry point for peasant-jsx.
+ * Global configuration and plugin entry point for croft.
  */
-const PoorManJSX = {
+const Croft = {
   /** Registered custom plugins configuration. */
   plugins: {} as Record<string, any>,
 
   /**
-   * Mounts a plugin configuration on PoorManJSX.
+   * Mounts a plugin configuration on Croft.
    * @param name Unique name for the plugin.
    * @param config Configuration object. If it contains `_init`, it will be executed.
    */
@@ -130,4 +130,4 @@ const PoorManJSX = {
   },
 };
 
-export default PoorManJSX;
+export default Croft;

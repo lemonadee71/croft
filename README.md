@@ -1,8 +1,8 @@
-# Peasant JSX 🌾
+# Croft 🌾
 
 A lightweight, decoupled, and highly reactive JSX-like templating engine using native DOM. 
 
-Unlike traditional virtual DOM libraries, Peasant JSX uses native browser features, a clean pub/sub reactivity system based on ES6 Proxies, and a plug-and-play directive engine to build fast, robust web interfaces with zero build-step requirements.
+Unlike traditional virtual DOM libraries, Croft uses native browser features, a clean pub/sub reactivity system based on ES6 Proxies, and a plug-and-play directive engine to build fast, robust web interfaces with zero build-step requirements.
 
 ---
 
@@ -21,9 +21,9 @@ Unlike traditional virtual DOM libraries, Peasant JSX uses native browser featur
 ## Installation
 
 ```bash
-pnpm install peasant-jsx
+pnpm add croft
 # or
-npm install peasant-jsx
+npm install croft
 ```
 
 ---
@@ -31,7 +31,7 @@ npm install peasant-jsx
 ## Quick Start
 
 ```typescript
-import PoorManJSX, { html, render, createHook } from "peasant-jsx";
+import Croft, { html, render, createHook } from "croft";
 
 // 1. Create a reactive state hook
 const state = createHook({
@@ -61,7 +61,7 @@ render(App(), "body");
 
 ### 1. Reactivity & Hooks
 
-The reactive state in Peasant JSX is created using `createHook`. Properties starting with `$` represent reactive references (subscribers/watchers) that can be inserted into the DOM.
+The reactive state in Croft is created using `createHook`. Properties starting with `$` represent reactive references (subscribers/watchers) that can be inserted into the DOM.
 
 ```typescript
 const state = createHook({ name: "World" });
@@ -70,15 +70,15 @@ const state = createHook({ name: "World" });
 html`<div>Hello, ${state.$name}!</div>`;
 
 // Update state directly - updates DOM node instantly
-state.name = "Peasant";
+state.name = "Croft";
 ```
 
 #### Typesafe Method Forwarding
-Peasant JSX supports method and property forwarding directly on reactive references. All methods are fully typed!
+Croft supports method and property forwarding directly on reactive references. All methods are fully typed!
 
 ```typescript
 const state = createHook({
-  title: "peasant jsx",
+  title: "croft",
   tags: ["refactor", "typesafe"]
 });
 
@@ -97,7 +97,7 @@ html`
 You can observe property updates manually using `watch` and `unwatch`.
 
 ```typescript
-import { watch } from "peasant-jsx";
+import { watch } from "croft";
 
 // watch returns an unsubscribe cleanup function
 const unsubscribe = watch(state.$title, (newTitle) => {
@@ -134,9 +134,9 @@ Directives customize the behavior of elements during hydration. Attributes prefi
 You can define custom directives to handle custom attributes or behaviors.
 
 ```typescript
-import PoorManJSX from "peasant-jsx";
+import Croft from "croft";
 
-PoorManJSX.addDirective({
+Croft.addDirective({
   type: "tooltip",
   match: ":tooltip",
   callback: (element, data) => {
@@ -164,7 +164,7 @@ The predicate function returns the matched key as a string, `false` for no match
 
 ## DOM Lifecycles
 
-Elements managed by Peasant JSX receive lifecycles via standard custom events.
+Elements managed by Croft receive lifecycles via standard custom events.
 
 ```typescript
 const handleMount = () => console.log("Element added to DOM!");
@@ -190,19 +190,19 @@ html`
 For plugins that need to hook into the template compilation pipeline, use the generic lifecycle API:
 
 ```typescript
-import PoorManJSX from "peasant-jsx";
+import Croft from "croft";
 
 // Register a callback for a pipeline stage
-PoorManJSX.onLifecycle("beforeCreate", (htmlString: string) => htmlString.replace(/foo/g, "bar"));
-PoorManJSX.onLifecycle("afterCreate", (fragment: DocumentFragment, values: Record<string, any>) => { /* ... */ });
-PoorManJSX.onLifecycle("beforeHydrate", (root: HTMLElement, context: Record<string, any>) => { /* ... */ });
-PoorManJSX.onLifecycle("afterHydrate", (root: HTMLElement, context: Record<string, any>) => { /* ... */ });
+Croft.onLifecycle("beforeCreate", (htmlString: string) => htmlString.replace(/foo/g, "bar"));
+Croft.onLifecycle("afterCreate", (fragment: DocumentFragment, values: Record<string, any>) => { /* ... */ });
+Croft.onLifecycle("beforeHydrate", (root: HTMLElement, context: Record<string, any>) => { /* ... */ });
+Croft.onLifecycle("afterHydrate", (root: HTMLElement, context: Record<string, any>) => { /* ... */ });
 
 // Remove a callback
-PoorManJSX.removeLifecycle("beforeCreate", myCallback);
+Croft.removeLifecycle("beforeCreate", myCallback);
 
 // Run all callbacks for a stage (used internally)
-PoorManJSX.runLifecycle("beforeCreate", templateString);
+Croft.runLifecycle("beforeCreate", templateString);
 ```
 
 | Stage | Signature | Description |
@@ -216,14 +216,14 @@ PoorManJSX.runLifecycle("beforeCreate", templateString);
 
 ## Custom Components
 
-Peasant JSX supports custom components — elements with a user-defined tag name that render a template when encountered in the DOM.
+Croft supports custom components — elements with a user-defined tag name that render a template when encountered in the DOM.
 
 ### Defining a Component
 
 Components can be registered via `defineComponent` or the plugin mount system:
 
 ```typescript
-import { defineComponent, html } from "peasant-jsx";
+import { defineComponent, html } from "croft";
 
 // Generic props type for type safety
 interface GreetingProps {
@@ -238,9 +238,9 @@ defineComponent<GreetingProps>("my-greeting", (props, slots) => {
 Or grouped under a plugin mount:
 
 ```typescript
-import PoorManJSX from "peasant-jsx";
+import Croft from "croft";
 
-PoorManJSX.mount("components", {
+Croft.mount("components", {
   "my-button": (props: any) =>
     html`<button class=${props.variant}>${props.label}</button>`,
   "my-badge": (props: any) =>
@@ -272,7 +272,7 @@ html`
 `
 
 // With reactive state (static resolution — parent re-renders on change)
-const state = createHook({ name: "Peasant" });
+const state = createHook({ name: "Croft" });
 html`<my-greeting name=${state.$name}></my-greeting>`
 // → state.name = "JSX"; re-render parent to update component
 ```
