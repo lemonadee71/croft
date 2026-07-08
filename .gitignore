@@ -34,6 +34,9 @@ coverage/
 # Generated example build (into docs public dir)
 docs/public/example/
 
+# VitePress cache
+docs/.vitepress/cache/
+
 # TypeScript
 *.tsbuildinfo
 
