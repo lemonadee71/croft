@@ -36,6 +36,8 @@ const extractSlots = (children: Node[]): Record<string, Node[]> => {
         slots[slotAttr].push(child);
         continue;
       }
+    } else if (child instanceof Text && !child.textContent?.trim()) {
+      continue;
     }
     if (!slots.default) slots.default = [];
     slots.default.push(child);
