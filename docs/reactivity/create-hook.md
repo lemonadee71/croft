@@ -94,3 +94,55 @@ state.user = { ...state.user, settings: { theme: "light" } };
 ```
 
 However, for deeply nested reactivity, you may want to flatten your state or create separate hooks for different concerns.
+
+## Traps / Transforms
+
+A **trap** (or transform) is a callback you pass to a `$` reference to derive a new value. Unlike JavaScript operators (`===`, `>`, `.length`), traps create a reactive chain — they re-evaluate whenever the source value changes.
+
+```typescript
+const state = createHook({ todos: [], filter: "all" });
+
+// ❌ Not reactive — evaluated immediately
+state.$filter === "all"      // true/false at render time only
+state.$todos.length          // function reference, breaks in templates
+
+// ✅ Reactive — trap re-evaluates on every change
+state.$filter((f) => f === "all")                                  // boolean
+state.$todos((todos) => todos.filter(t => !t.completed))            // filtered array
+state.$todos((todos) => todos.filter(t => !t.completed).length)     // count
+```
+
+### With plain state access
+
+The trap callback receives a plain snapshot of all hook properties as the second argument:
+
+```typescript
+const state = createHook({ todos: [], filter: "all" });
+
+// Derive filtered todos from both filter and todos
+html`
+  <ul>
+    ${state.$filter((filter, snapshot) => {
+      // snapshot is a plain object with ALL current hook values
+      // snapshot.todos has the current todos array
+      // NOTE: snapshot is NOT reactive — use it only for reading
+      if (filter === "all") return snapshot.todos;
+      return snapshot.todos.filter(t =>
+        filter === "active" ? !t.completed : t.completed
+      );
+    }).map(todo => html`<li>${todo.title}</li>`)}
+  </ul>
+`;
+```
+
+### Method forwarding
+
+Method forwarding is another form of transform. When you call a method on a `$` reference, it chains into the transform pipeline:
+
+```typescript
+state.$tags.reverse()                // reactive: value => value.reverse()
+state.$tags.map(t => t.upperCase)    // reactive: value => value.map(...)
+state.$value.trim().toUpperCase()    // reactive: value => value.trim().toUpperCase()
+```
+
+This works for any method that takes arguments. Property-only accesses like `.length` are not callable — use a trap instead.

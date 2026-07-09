@@ -67,15 +67,15 @@ Creates a reactive state container.
 ### `watch`
 
 ```typescript
-function watch<T>(ref: HookRef<T>, callback: (value: T) => void): () => void
+function watch<T>(ref: HookRef<T>, callback: (value: T, state: Record<string, any>) => void): () => void
 ```
 
-Observes a reactive reference for changes.
+Observes a reactive reference for changes. The callback receives the new value and a plain snapshot of all hook properties.
 
 ### `unwatch`
 
 ```typescript
-function unwatch<T>(ref: HookRef<T>, callback: (value: T) => void): void
+function unwatch<T>(ref: HookRef<T>, callback: (value: T, state: Record<string, any>) => void): void
 ```
 
 Removes a watcher from a reactive reference.

@@ -5,12 +5,12 @@ The `watch` function lets you observe property changes programmatically.
 ## Signature
 
 ```typescript
-function watch<T>(ref: HookRef<T>, callback: (newValue: T) => void): () => void
-function unwatch<T>(ref: HookRef<T>, callback: (newValue: T) => void): void
+function watch<T>(ref: HookRef<T>, callback: (newValue: T, state: Record<string, any>) => void): () => void
+function unwatch<T>(ref: HookRef<T>, callback: (newValue: T, state: Record<string, any>) => void): void
 ```
 
 - **ref** — A reactive reference (e.g., `state.$count`).
-- **callback** — Function called with the new value whenever it changes.
+- **callback** — Function called with the new value and a plain state snapshot whenever it changes.
 - **Returns** — An unsubscribe function.
 
 ## Basic Usage
@@ -30,9 +30,31 @@ state.count = 5; // Logs: "Count is now: 5"
 unsubscribe();
 ```
 
-## localStorage Persistence
+## Accessing Other State
 
-A common pattern is persisting state to localStorage:
+The callback receives a **plain object snapshot** of all hook properties as the second argument. This is useful when one property's change depends on another:
+
+```typescript
+const state = createHook({ todos: [], filter: "all" });
+
+watch(state.$todos, (newTodos, snapshot) => {
+  // snapshot is a plain object — NOT a Proxy
+  // snapshot.filter has the current filter value
+  localStorage.setItem("todos", JSON.stringify(newTodos));
+});
+
+watch(state.$filter, (newFilter, snapshot) => {
+  // snapshot.todos is the current todos at the time of the change
+  const filtered = newFilter === "all"
+    ? snapshot.todos
+    : snapshot.todos.filter(t => /* ... */);
+  updateUI(filtered);
+});
+```
+
+The second parameter is a shallow `{ ...target }` copy — it's a plain object, not a Proxy. Writing to it won't trigger watchers.
+
+## localStorage Persistence
 
 ```typescript
 const STORAGE_KEY = "my-app-state";
@@ -75,4 +97,5 @@ unwatch(state.$count, fn);
 
 - The callback fires **after** the value has been set.
 - During the callback, the new value is already available on the state object.
+- The second argument is a plain snapshot — modifying it won't trigger reactivity.
 - Watch callbacks are synchronous.

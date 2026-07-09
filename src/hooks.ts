@@ -1,8 +1,8 @@
 import { HOOK_TARGET, isHook, isPlainObject, compose } from "./utils";
 
 export type HookRef<V> = {
-  // Mapping / transform function
-  <R>(transform: (val: V) => R): HookRef<R>;
+  // Mapping / transform function — second arg is a plain snapshot of all hook properties
+  <R>(transform: (val: V, state: Record<string, any>) => R): HookRef<R>;
   (): HookRef<V>;
 } & {
   // Method and property forwarding
@@ -52,14 +52,20 @@ const methodForwarder = (target: any, prop: string | symbol): any => {
 };
 
 const createHookRef = (ref: any, prop: string, value: any): any => {
-  const fn = (transform: any = null) => ({
-    [HOOK_TARGET]: ref,
-    data: {
-      prop,
-      transform,
-      value,
-    },
-  });
+  const fn = (transform: any = null) => {
+    const wrapped = transform
+      ? (v: any) => transform(v, { ...ref })
+      : null;
+
+    return {
+      [HOOK_TARGET]: ref,
+      data: {
+        prop,
+        transform: wrapped,
+        value,
+      },
+    };
+  };
 
   return new Proxy(Object.assign(fn, fn()), { get: methodForwarder });
 };
@@ -83,22 +89,25 @@ const setter = (target: any, prop: string | symbol, value: any, receiver: any): 
     return Reflect.set(target, prop, value, receiver);
   }
 
+  const result = Reflect.set(target, prop, value, receiver);
+
   const data = HookRegistry.get(target);
   if (data) {
     const callbacks = data.listeners.get(prop);
     if (callbacks) {
+      const plainState = { ...target };
       for (const fn of callbacks) {
-        fn(value);
+        fn(value, plainState);
       }
     }
   }
 
-  return Reflect.set(target, prop, value, receiver);
+  return result;
 };
 
 export const watch = <V>(
   value: HookRef<V>,
-  ...callbacks: ((value: V) => void)[]
+  ...callbacks: ((value: V, state: Record<string, any>) => void)[]
 ): (() => void) => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
   const hook = value as any;
@@ -122,7 +131,7 @@ export const watch = <V>(
 
 export const unwatch = <V>(
   value: HookRef<V>,
-  ...callbacks: ((value: V) => void)[]
+  ...callbacks: ((value: V, state: Record<string, any>) => void)[]
 ): void => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
   const hook = value as any;

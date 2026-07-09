@@ -129,7 +129,7 @@ describe("observers", () => {
     count.value = 5;
 
     expect(mock).toHaveBeenCalledTimes(1);
-    expect(mock).toHaveBeenCalledWith(5);
+    expect(mock).toHaveBeenCalledWith(5, expect.any(Object));
   });
 
   it("can be removed with `unwatch`", () => {
@@ -142,7 +142,7 @@ describe("observers", () => {
     count.value = 10;
 
     expect(mock).toHaveBeenCalledTimes(1);
-    expect(mock).toHaveBeenCalledWith(5);
+    expect(mock).toHaveBeenCalledWith(5, expect.any(Object));
   });
 
   it("can be removed with unsubscribe function returned by `watch`", () => {
@@ -155,7 +155,111 @@ describe("observers", () => {
     count.value = 10;
 
     expect(mock).toHaveBeenCalledTimes(1);
-    expect(mock).toHaveBeenCalledWith(5);
+    expect(mock).toHaveBeenCalledWith(5, expect.any(Object));
+  });
+});
+
+describe("watch second parameter (plain state)", () => {
+  it("passes a plain object snapshot as the second argument", () => {
+    const mock = vi.fn();
+    const state = createHook({ count: 0, label: "test" });
+    watch(state.$count, mock);
+
+    state.count = 5;
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    const [value, plainState] = mock.mock.calls[0];
+    expect(value).toBe(5);
+    expect(plainState).toEqual({ count: 5, label: "test" });
+  });
+
+  it("the plain state snapshot is not the proxy — setting a property on it does not trigger watchers", () => {
+    const mock = vi.fn();
+    const state = createHook({ count: 0 });
+    watch(state.$count, mock);
+
+    state.count = 1;
+    const [, plainState] = mock.mock.calls[0];
+
+    plainState.count = 99;
+    // The proxy wasn't touched — no extra calls
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(state.count).toBe(1);
+  });
+
+  it("contains all properties of the hook at the moment the callback fires", () => {
+    const mock = vi.fn();
+    const state = createHook({ a: 1, b: 2, c: 3 });
+    watch(state.$a, mock);
+
+    state.a = 10;
+    state.b = 20;
+
+    // Only one change to 'a' — b was updated after
+    expect(mock).toHaveBeenCalledTimes(1);
+    const [, plainState] = mock.mock.calls[0];
+    expect(plainState).toEqual({ a: 10, b: 2, c: 3 });
+  });
+
+  it("works with primitive hooks", () => {
+    const mock = vi.fn();
+    const hook = createHook(10);
+    watch(hook.$value, mock);
+
+    hook.value = 20;
+
+    const [, plainState] = mock.mock.calls[0];
+    expect(plainState).toEqual({ value: 20 });
+  });
+
+  it("works with array hooks", () => {
+    const mock = vi.fn();
+    const hook = createHook([1, 2, 3]);
+    watch(hook.$value, mock);
+
+    hook.value = [4, 5, 6];
+
+    const [, plainState] = mock.mock.calls[0];
+    expect(plainState).toEqual({ value: [4, 5, 6] });
+  });
+});
+
+describe("HookRef transform second parameter (plain state)", () => {
+  it("passes a plain state snapshot to the trap callback", () => {
+    const state = createHook({ items: ["a", "b"], count: 0 });
+    const transform = vi.fn((items: string[], _state: any) => items.length);
+
+    // Using the trap in a template — transforms are resolved on render
+    render(html`<div data-target>:text=${state.$items(transform)}</div>`);
+
+    expect(transform).toHaveBeenCalledTimes(1);
+    const [value, plainState] = transform.mock.calls[0];
+    expect(value).toEqual(["a", "b"]);
+    expect(plainState).toEqual({ items: ["a", "b"], count: 0 });
+  });
+
+  it("the plain state in a trap is not a proxy", () => {
+    const state = createHook({ count: 0, label: "hi" });
+    let capturedState: any;
+    render(html`<div data-target>:text=${state.$label((label, s) => { capturedState = s; return label; })}</div>`);
+
+    capturedState.label = "modified";
+    expect(state.label).toBe("hi"); // original unchanged
+    expect("label" in capturedState).toBe(true);
+  });
+
+  it("the trap fires again on change and receives updated plain state", () => {
+    const state = createHook({ items: ["a"], count: 0 });
+    const transform = vi.fn((items: string[], _state: any) => items.length);
+    render(html`<div data-target>:text=${state.$items(transform)}</div>`);
+
+    expect(transform).toHaveBeenCalledTimes(1);
+
+    state.items = ["a", "b", "c"];
+
+    expect(transform).toHaveBeenCalledTimes(2);
+    const [, plainState] = transform.mock.calls[1];
+    expect(plainState).toEqual({ items: ["a", "b", "c"], count: 0 });
   });
 });
 

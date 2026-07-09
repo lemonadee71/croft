@@ -2,7 +2,7 @@
 
 ## Derived State
 
-For computed values that depend on other state, derive them in your code:
+For computed values that depend on other state, use **traps** (transforms) on `$` references. These re-evaluate automatically when the source data changes:
 
 ```typescript
 const state = createHook({
@@ -10,29 +10,52 @@ const state = createHook({
   filter: "all",
 });
 
-// Derived values — just use functions
-const filteredTodos = () => {
-  switch (state.filter) {
-    case "active": return state.todos.filter(t => !t.completed);
-    case "completed": return state.todos.filter(t => t.completed);
-    default: return state.todos;
-  }
-};
+// Derived values using traps
+const filteredTodos = state.$filter((filter, snapshot) => {
+  if (filter === "all") return snapshot.todos;
+  return snapshot.todos.filter(t =>
+    filter === "active" ? !t.completed : t.completed,
+  );
+});
 
-const activeCount = () => state.todos.filter(t => !t.completed).length;
+const activeCount = state.$todos((todos) =>
+  todos.filter((t) => !t.completed).length,
+);
 ```
 
-Since these functions read from the reactive store, they always return current values when called. Use them in templates where you need live data:
+Use them directly in templates — they're reactive:
 
 ```typescript
-html`<span>${activeCount()} items left</span>`;
+html`<span>${activeCount} items left</span>`;
 ```
 
-However, for automatic DOM updates when the source data changes, use `$` references in the template:
+### With method forwarding
+
+Method calls on `$` references are also reactive — they chain as transforms:
 
 ```typescript
-html`<span>${state.$todos.filter(t => !t.completed).length} items left</span>`;
+html`<span>${state.$todos.filter(t => !t.completed).length()} items left</span>`;
 ```
+
+Note that calling `length()` works because `.length` on a `$` reference returns a callable, but this is fragile — prefer a trap for getter-only properties.
+
+```typescript
+// ✅ Clear and reliable — use a trap
+html`<span>${state.$todos((todos) => todos.filter(t => !t.completed).length)} items left</span>`;
+```
+
+### What NOT to do
+
+JavaScript operators on `$` references are evaluated **immediately at render time** and are **not reactive**:
+
+```typescript
+// ❌ NOT reactive — evaluated once
+state.$filter === "all"                              // returns true/false at render time, never updates
+state.$todos.length > 0 ? html`...` : ""             // ternary evaluates once
+state.$todos.map(todo => html`<li>...</li>`)          // .map evaluates once
+```
+
+Instead, use traps or move the logic into store properties updated with `watch`.
 
 ## Multiple State Slices
 
@@ -60,7 +83,7 @@ state.todos = [...state.todos, newTodo];
 // ❌ Won't trigger reactivity
 state.user.name = "New Name";
 
-// ✅ Triggers reactivity  
+// ✅ Triggers reactivity
 state.user = { ...state.user, name: "New Name" };
 ```
 
