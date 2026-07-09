@@ -286,14 +286,30 @@ export const BuiltinDirectives: RegistryEntry[] = [
       const attrs = arg.replace(WRAPPING_BRACKETS, "").split(",");
 
       for (const name of attrs) {
-        if (isTruthy(data.value)) {
+        const active =
+          isTruthy(data.value) ||
+          (data.value === "" && BOOLEAN_ATTRS.includes(name));
+
+        if (active) {
           let value = "";
           if (option === "mirror") value = name;
           else if (option === "preserve") value = data.value;
 
-          element.setAttribute(name, value);
+          if (name === "checked" && "checked" in element) {
+            (element as HTMLInputElement).checked = true;
+          } else if (name === "indeterminate" && "indeterminate" in element) {
+            (element as HTMLInputElement).indeterminate = true;
+          } else {
+            element.setAttribute(name, value);
+          }
         } else {
-          element.removeAttribute(name);
+          if (name === "checked" && "checked" in element) {
+            (element as HTMLInputElement).checked = false;
+          } else if (name === "indeterminate" && "indeterminate" in element) {
+            (element as HTMLInputElement).indeterminate = false;
+          } else {
+            element.removeAttribute(name);
+          }
         }
       }
     },
