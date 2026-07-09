@@ -96,9 +96,12 @@ const setter = (target: any, prop: string | symbol, value: any, receiver: any): 
   return Reflect.set(target, prop, value, receiver);
 };
 
-export const watch = (value: any, ...callbacks: Function[]): (() => void) => {
+export const watch = <V>(
+  value: HookRef<V>,
+  ...callbacks: ((value: V) => void)[]
+): (() => void) => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
-  const hook = value;
+  const hook = value as any;
 
   const data = HookRegistry.get(hook[HOOK_TARGET]);
   if (!data) throw new Error("Hook target registry entry not found");
@@ -117,9 +120,12 @@ export const watch = (value: any, ...callbacks: Function[]): (() => void) => {
   };
 };
 
-export const unwatch = (value: any, ...callbacks: Function[]): void => {
+export const unwatch = <V>(
+  value: HookRef<V>,
+  ...callbacks: ((value: V) => void)[]
+): void => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
-  const hook = value;
+  const hook = value as any;
 
   const data = HookRegistry.get(hook[HOOK_TARGET]);
   if (!data) return;
