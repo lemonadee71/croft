@@ -34,7 +34,7 @@
     "release": "semantic-release",
     "dev": "concurrently -n docs,example -c blue,green 'pnpm dev:docs' 'pnpm dev:example'",
     "dev:docs": "pnpm --filter docs dev",
-    "docs:build": "pnpm build && pnpm --filter example build && mkdir -p docs/public && rm -rf docs/public/example && cp -r example/dist docs/public/example && cp CHANGELOG.md docs/ && pnpm --filter docs build",
+    "docs:build": "pnpm build && pnpm --filter example build && mkdir -p docs/public && rm -rf docs/public/example && cp -r example/dist docs/public/example && test -f CHANGELOG.md && cp CHANGELOG.md docs/; pnpm --filter docs build",
     "dev:example": "pnpm --filter example dev"
   },
   "devDependencies": {
