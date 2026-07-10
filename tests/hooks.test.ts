@@ -241,7 +241,14 @@ describe("HookRef transform second parameter (plain state)", () => {
   it("the plain state in a trap is not a proxy", () => {
     const state = createHook({ count: 0, label: "hi" });
     let capturedState: any;
-    render(html`<div data-target>:text=${state.$label((label, s) => { capturedState = s; return label; })}</div>`);
+    render(
+      html`<div data-target>
+        :text=${state.$label((label, s) => {
+          capturedState = s;
+          return label;
+        })}
+      </div>`
+    );
 
     capturedState.label = "modified";
     expect(state.label).toBe("hi"); // original unchanged

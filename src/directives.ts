@@ -286,9 +286,7 @@ export const BuiltinDirectives: RegistryEntry[] = [
       const attrs = arg.replace(WRAPPING_BRACKETS, "").split(",");
 
       for (const name of attrs) {
-        const active =
-          isTruthy(data.value) ||
-          (data.value === "" && BOOLEAN_ATTRS.includes(name));
+        const active = isTruthy(data.value) || (data.value === "" && BOOLEAN_ATTRS.includes(name));
 
         if (active) {
           let value = "";

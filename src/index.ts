@@ -1,4 +1,4 @@
-import { createHook, watch, unwatch } from "./hooks";
+import { createHook, watch, unwatch, type HookRef } from "./hooks";
 import { addDirective, removeDirective } from "./directives";
 import { defineComponent, removeComponent, type ComponentRenderer } from "./components";
 import {
@@ -61,7 +61,7 @@ export {
   removeComponent,
 };
 
-export type { ComponentRenderer };
+export type { ComponentRenderer, HookRef };
 
 /**
  * Global configuration and plugin entry point for croft.

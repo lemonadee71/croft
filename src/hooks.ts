@@ -53,9 +53,7 @@ const methodForwarder = (target: any, prop: string | symbol): any => {
 
 const createHookRef = (ref: any, prop: string, value: any): any => {
   const fn = (transform: any = null) => {
-    const wrapped = transform
-      ? (v: any) => transform(v, { ...ref })
-      : null;
+    const wrapped = transform ? (v: any) => transform(v, { ...ref }) : null;
 
     return {
       [HOOK_TARGET]: ref,
