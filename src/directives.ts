@@ -245,7 +245,7 @@ export const BuiltinDirectives: RegistryEntry[] = [
       for (const fn of fns) {
         const callback = (e: Event) => {
           if (options.includes("self") && e.target !== e.currentTarget) return;
-          fn(e);
+          fn.call(element, e);
           if (options.includes("prevent")) e.preventDefault();
           if (options.includes("only")) e.stopImmediatePropagation();
           else if (options.includes("stop")) e.stopPropagation();
