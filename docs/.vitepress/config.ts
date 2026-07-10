@@ -87,6 +87,7 @@ export default defineConfig({
         text: "Reference",
         items: [
           { text: "API Reference", link: "/api-reference" },
+          { text: "Changelog", link: "/changelog" },
         ],
       },
     ],
