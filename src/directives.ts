@@ -391,7 +391,7 @@ export const BuiltinDirectives: RegistryEntry[] = [
         setMetadata(element, "og_display", display);
       }
 
-      if (isTruthy(data.value)) element.style.display = display;
+      if (isTruthy(data.value)) element.style.display = display === "none" ? "" : display;
       else element.style.display = "none";
     },
   }),
