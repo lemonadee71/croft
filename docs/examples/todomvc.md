@@ -4,7 +4,7 @@ This example demonstrates a full TodoMVC implementation built with Croft, showca
 
 - **createHook** for reactive todo state and localStorage persistence
 - **html** template with reactive references and conditional rendering
-- **Directives** for class toggling, style, event handlers
+- **Directives** for class toggling, conditional visibility, event handlers
 - **defineComponent** for reusable UI components
 - **Routing** with hash-based filter switching
 
@@ -29,27 +29,37 @@ example/
 
 ## Store
 
-The store uses `createHook` with immutable updates and `watch` for localStorage persistence:
+The store uses `createHook` with immutable updates and `watch` for cross-property derived state and localStorage persistence:
 
 ```typescript
 const store = createHook({
-  todos: loadTodos(),
+  todos: [],
   filter: "all",
+  filteredTodos: [],
 });
 
-watch(store.$todos, (todos) => {
-  localStorage.setItem("todos-croft", JSON.stringify(todos));
-});
+// Persistence
+watch(store.$todos, saveTodos);
+
+// Derived: recompute filteredTodos when todos or filter change
+function updateFiltered(_value: any, state: Record<string, any>) {
+  const { todos, filter } = state;
+  if (filter === "active") store.filteredTodos = todos.filter((t) => !t.completed);
+  else if (filter === "completed") store.filteredTodos = todos.filter((t) => t.completed);
+  else store.filteredTodos = todos;
+}
+watch(store.$todos, updateFiltered);
+watch(store.$filter, updateFiltered);
 ```
 
 ## Key Patterns
 
 | Requirement | Croft Feature |
 |---|---|
-| Conditional section visibility | `${store.$todos.length > 0 ? html\`...\` : ''}` |
+| Conditional section visibility | `:show=${hasTodos}` with a trap: `store.$todos((t) => t.length > 0)` |
 | Class toggling | `class:completed=${todo.completed}` |
-| Event handling | `onClick=${handler}`, `onDblClick=${handler}` |
-| List rendering | `${store.$filteredTodos.map(todo => renderItem(todo))}` |
+| Event handling | `onKeydown=${handler}`, `onDblclick=${handler}` |
+| List rendering | `${store.$filteredTodos.map(todo => renderItem(todo))}` (body placement) |
 | Hash routing | `hashchange` event → `store.filter` |
 | localStorage | `watch(store.$todos, ...)` |
 
