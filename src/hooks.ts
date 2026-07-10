@@ -55,7 +55,7 @@ const createHookRef = (ref: any, prop: string, value: any): any => {
   const fn = (transform: any = null) => {
     const wrapped = transform ? (v: any) => transform(v, { ...ref }) : null;
 
-    return {
+    const result = {
       [HOOK_TARGET]: ref,
       data: {
         prop,
@@ -63,6 +63,16 @@ const createHookRef = (ref: any, prop: string, value: any): any => {
         value,
       },
     };
+
+    const chainable = (nextTransform?: any) => {
+      if (!nextTransform) return result;
+      const composed = wrapped
+        ? (v: any) => nextTransform(wrapped(v), { ...ref })
+        : (v: any) => nextTransform(v, { ...ref });
+      return fn(composed);
+    };
+
+    return new Proxy(Object.assign(chainable, result), { get: methodForwarder });
   };
 
   return new Proxy(Object.assign(fn, fn()), { get: methodForwarder });

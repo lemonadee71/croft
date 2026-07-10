@@ -57,6 +57,28 @@ state.$todos.map(todo => html`<li>...</li>`)          // .map evaluates once
 
 Instead, use traps or move the logic into store properties updated with `watch`.
 
+## Trap Chaining
+
+A trap returns a callable `HookRef` that can itself receive a transform, composing the two:
+
+```typescript
+const state = createHook({ items: ["a", "b", "c"] });
+const length = state.$items((items) => items.length);
+const isLong = length((n) => n > 2);
+// isLong resolves to true when items.length > 2
+
+// Use in a template — reacts to source changes
+html`<span :text=${isLong}></span>`;
+```
+
+The second transform receives the result of the first, plus a plain snapshot of the hook state:
+
+```typescript
+state.$items((items) => items.length)((n, snapshot) => n > 0);
+```
+
+This is equivalent to composing the functions manually, but preserves reactivity through the pipeline.
+
 ## Multiple State Slices
 
 For larger apps, split state into separate hooks:

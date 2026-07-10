@@ -268,6 +268,43 @@ describe("HookRef transform second parameter (plain state)", () => {
     const [, plainState] = transform.mock.calls[1];
     expect(plainState).toEqual({ items: ["a", "b", "c"], count: 0 });
   });
+
+  it("supports chaining traps (trap on a trap result)", () => {
+    const state = createHook({ items: ["a", "b", "c"], count: 0 });
+    const length = state.$items((items: string[]) => items.length);
+    const isLong = length((n: number) => n > 2);
+
+    // Verify the chained trap data structure
+    expect((isLong as any).data.prop).toBe("items");
+    expect(typeof (isLong as any).data.transform).toBe("function");
+
+    // Resolve manually to verify correct transform composition
+    const resolved = (isLong as any).data.transform((isLong as any).data.value);
+    expect(resolved).toBe(true);
+
+    render(html`<div data-target :text=${isLong}></div>`);
+    expect(getTarget()).toHaveTextContent("true");
+
+    state.items = ["a"];
+    expect(getTarget()).toHaveTextContent("false");
+  });
+
+  it("chained trap receives plain state as second argument", () => {
+    const state = createHook({ items: ["x"], count: 10 });
+    const double = vi.fn((items: string[]) => items.length);
+    const check = vi.fn((n: number, s: any) => {
+      expect(s.count).toBe(10);
+      return n > 0;
+    });
+
+    const result = state.$items(double)(check);
+
+    render(html`<div data-target :text=${result}></div>`);
+
+    expect(double).toHaveBeenCalledTimes(1);
+    expect(check).toHaveBeenCalledTimes(1);
+    expect(getTarget()).toHaveTextContent("true");
+  });
 });
 
 describe("method forwarding", () => {
