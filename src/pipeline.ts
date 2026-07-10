@@ -98,13 +98,18 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
           if (type !== "attr") {
             element.removeAttribute(rawName);
 
+            const options: any = { element, type, target: attrName };
+
+            if (type === "children" && match && isHook(value)) {
+              const [head, tail, marker] = createMarkers();
+              element.prepend(head);
+              element.append(tail);
+              options.target = marker;
+            }
+
             modifyElement(element, type, {
-              key: attrName,
-              value: resolveValue(value, {
-                element,
-                type,
-                target: attrName,
-              }),
+              key: options.target,
+              value: resolveValue(value, options),
             });
           }
         }
