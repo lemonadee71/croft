@@ -31,15 +31,17 @@
     "format": "oxfmt --write src tests",
     "prepublishOnly": "pnpm build",
     "release": "semantic-release",
-    "docs:dev": "pnpm --filter docs dev",
-    "docs:build": "pnpm build && pnpm --filter example build && pnpm --filter docs build",
-    "example:dev": "pnpm --filter example dev"
+    "dev": "concurrently -n docs,example -c blue,green 'pnpm dev:docs' 'pnpm dev:example'",
+    "dev:docs": "pnpm --filter docs dev",
+    "docs:build": "pnpm build && pnpm --filter example build && rm -rf docs/public/example && cp -r example/dist docs/public/example && pnpm --filter docs build",
+    "dev:example": "pnpm --filter example dev"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@testing-library/dom": "^9.3.4",
     "@testing-library/jest-dom": "^6.5.0",
+    "concurrently": "^9.2.3",
     "jsdom": "^22.1.0",
     "oxfmt": "latest",
     "oxlint": "latest",
