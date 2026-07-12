@@ -50,7 +50,7 @@ Always run `pnpm format && pnpm lint` after making code changes.
 
 ## CI
 
-- **Release** (push `main`): test → build → `semantic-release` (publish, GitHub Release, CHANGELOG). Uses OIDC/provenance, no npm token.
+- **Release** (push `main`): test → build → `semantic-release` (publish, GitHub Release, CHANGELOG). Uses OIDC Trusted Publishing for publish step, but `NPM_TOKEN` secret is still needed for verifyConditions. Must be a granular access token (90-day expiry, needs rotation). Package configured as a trusted publisher on npmjs.com.
 - **Deploy Docs** (push `main` or `workflow_dispatch`): build example + vitepress → GitHub Pages at `/croft/`
 
 ## Conventions
