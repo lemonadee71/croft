@@ -1,6 +1,6 @@
 {
   "name": "@lemonadee/croft",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A lightweight, decoupled, native DOM reactive templating engine",
   "homepage": "https://lemonadee71.github.io/croft",
   "bugs": {
