@@ -52,7 +52,7 @@ Always run `pnpm format && pnpm lint` after making code changes.
 
 ## CI
 
-- **Auto Changeset** (PR labeled `patch`/`minor`/`major`/`dependencies`): auto-generates a changeset file and commits it to the PR branch. `dependencies` maps to `patch`.
+- **Auto Changeset** (PR labeled `patch`/`minor`/`major`/`dependencies`): auto-generates a changeset file and commits it to the PR branch. Re-labeling overwrites the existing changeset. `dependencies` maps to `patch`. Changeset description = PR title + PR body.
 - **Release** (push `main`): test → `changesets/action@v1` — creates "Version Packages" PR when changesets present, or publishes when PR is merged. Uses OIDC Trusted Publishing (no npm token). Package must be configured as a trusted publisher on npmjs.com. npm upgraded to latest in CI for OIDC support.
 - **Deploy Docs** (push `main` or `workflow_dispatch`): build example + vitepress → GitHub Pages at `/croft/`
 

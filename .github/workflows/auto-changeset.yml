@@ -28,10 +28,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Create changeset if none exists
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          LABELS: ${{ toJSON(github.event.pull_request.labels) }}
         run: |
+          PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
+          PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
+          LABELS=$(jq -c '.pull_request.labels' "$GITHUB_EVENT_PATH")
+
           mkdir -p .changeset
 
           # Remove any previous auto-generated changeset
@@ -50,13 +51,17 @@ jobs:
           fi
 
           # Write new changeset file
-          cat > ".changeset/auto-$(date +%s).md" <<- EOF
-          ---
-          "@lemonadee/croft": $BUMP
-          ---
-
-          $PR_TITLE
-          EOF
+          {
+            echo "---"
+            echo "\"@lemonadee/croft\": $BUMP"
+            echo "---"
+            echo ""
+            echo "$PR_TITLE"
+            if [ -n "$PR_BODY" ] && [ "$PR_BODY" != "null" ]; then
+              echo ""
+              echo "$PR_BODY"
+            fi
+          } > ".changeset/auto-$(date +%s).md"
 
           echo "Created changeset with $BUMP bump"
 
