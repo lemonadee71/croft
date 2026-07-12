@@ -28,18 +28,20 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Create changeset if none exists
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           PR_TITLE=$(jq -r '.pull_request.title' "$GITHUB_EVENT_PATH")
           PR_BODY=$(jq -r '.pull_request.body // ""' "$GITHUB_EVENT_PATH")
           LABELS=$(jq -c '.pull_request.labels' "$GITHUB_EVENT_PATH")
 
+          CHANGESET_FILE=".changeset/auto-pr-${PR_NUMBER}.md"
           mkdir -p .changeset
 
-          # Remove any previous auto-generated changeset
-          PREV=$(find .changeset -maxdepth 1 -name 'auto-*.md' -print -quit)
-          if [ -n "$PREV" ]; then
-            rm "$PREV"
-            echo "Removed previous changeset: $PREV"
+          # Remove previous changeset for THIS PR only
+          if [ -f "$CHANGESET_FILE" ]; then
+            rm "$CHANGESET_FILE"
+            echo "Removed previous changeset for PR #$PR_NUMBER"
           fi
 
           # Determine bump type
@@ -61,13 +63,13 @@ jobs:
               echo ""
               echo "$PR_BODY"
             fi
-          } > ".changeset/auto-$(date +%s).md"
+          } > "$CHANGESET_FILE"
 
-          echo "Created changeset with $BUMP bump"
+          echo "Created $CHANGESET_FILE with $BUMP bump"
 
           # Commit and push
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .changeset/
-          git commit -m "chore: auto-generate changeset ($BUMP)"
+          git commit -m "chore: auto-generate changeset for PR #$PR_NUMBER ($BUMP)"
           git push
