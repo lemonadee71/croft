@@ -16,7 +16,9 @@ Published as `@lemonadee/croft`. Built via Vite lib mode (`dist/index.js`) + `ts
 | `pnpm dev` | Run docs + example dev servers concurrently |
 | `pnpm docs:build` | Build library → example → copy to docs/public → build vitepress |
 | `pnpm docs:prebuild` | Just the prep steps (library + example + copy) without vitepress |
-| `pnpm release:manual` | `np` — interactive manual publish (must be on `main`) |
+| `pnpm changeset` | Create a changeset for the next release |
+| `pnpm version-packages` | Consume changesets and bump versions + changelog |
+| `pnpm release` | Publish current version to npm (runs `changeset publish`) |
 
 Always run `pnpm format && pnpm lint` after making code changes.
 
@@ -50,7 +52,7 @@ Always run `pnpm format && pnpm lint` after making code changes.
 
 ## CI
 
-- **Release** (push `main`): test → build → `semantic-release` (publish, GitHub Release, CHANGELOG). Uses OIDC/provenance, no npm token.
+- **Release** (push `main`): test → `changesets/action@v1` — creates "Version Packages" PR when changesets present, or publishes when PR is merged. Uses OIDC Trusted Publishing (no npm token). Package must be configured as a trusted publisher on npmjs.com. npm upgraded to latest in CI for OIDC support.
 - **Deploy Docs** (push `main` or `workflow_dispatch`): build example + vitepress → GitHub Pages at `/croft/`
 
 ## Conventions
@@ -62,7 +64,7 @@ Always run `pnpm format && pnpm lint` after making code changes.
 ## Gotchas
 
 - `docs/public/example/` is gitignored; `docs:prebuild` creates it. Use `pnpm docs:build` for the full pipeline.
-- `docs:build` copies `CHANGELOG.md` from root into `docs/` (only if file exists — created by semantic-release post-first-release).
+- `docs:build` copies `CHANGELOG.md` from root into `docs/` (only if file exists — created by changesets post-first-release).
 - Example app aliases `@lemonadee/croft` → `../src/index.ts` (livesource during dev).
 - CSS imports: example uses `todomvc-app-css` (npm package).
 - `.main` section visibility in TodoMVC uses `:show` directive with a `hasTodos` trap.
