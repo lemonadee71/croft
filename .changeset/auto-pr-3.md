@@ -1,7 +1,0 @@
----
-"@lemonadee/croft": patch
----
-
-Update `auto-changeset` workflow
-
-Just updated the implementation to include the PR body for description
