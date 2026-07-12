@@ -1,0 +1,67 @@
+name: Auto Changeset
+
+on:
+  pull_request:
+    types: [opened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-changeset:
+    if: |
+      contains(github.event.pull_request.labels.*.name, 'patch')
+      || contains(github.event.pull_request.labels.*.name, 'minor')
+      || contains(github.event.pull_request.labels.*.name, 'major')
+      || contains(github.event.pull_request.labels.*.name, 'dependencies')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create changeset if none exists
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels) }}
+        run: |
+          # Skip if a changeset already exists on this branch
+          EXISTING=$(ls .changeset/auto-*.md 2>/dev/null)
+          if [ -n "$EXISTING" ]; then
+            echo "Changeset already exists, skipping"
+            cat "$EXISTING"
+            exit 0
+          fi
+
+          # Determine bump type
+          BUMP="patch"
+          if echo "$LABELS" | grep -q '"major"'; then
+            BUMP="major"
+          elif echo "$LABELS" | grep -q '"minor"'; then
+            BUMP="minor"
+          fi
+
+          # Write changeset file
+          cat > ".changeset/auto-$(date +%s).md" <<- EOF
+          ---
+          "@lemonadee/croft": $BUMP
+          ---
+
+          $PR_TITLE
+          EOF
+
+          echo "Created changeset with $BUMP bump"
+
+          # Commit and push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .changeset/
+          git commit -m "chore: auto-generate changeset"
+          git push
