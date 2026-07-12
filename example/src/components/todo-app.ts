@@ -1,4 +1,4 @@
-import { html, defineComponent } from "croft";
+import { html, defineComponent } from "@lemonadee/croft";
 import {
   store,
   allCompleted,

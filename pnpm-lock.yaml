@@ -53,7 +53,7 @@ importers:
 
   example:
     dependencies:
-      croft:
+      '@lemonadee/croft':
         specifier: workspace:*
         version: link:..
       todomvc-app-css:

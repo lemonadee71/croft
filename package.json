@@ -1,5 +1,5 @@
 {
-  "name": "croft",
+  "name": "@lemonadee/croft",
   "version": "1.0.0",
   "description": "A lightweight, decoupled, native DOM reactive templating engine",
   "homepage": "https://lemonadee71.github.io/croft",
@@ -19,6 +19,9 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

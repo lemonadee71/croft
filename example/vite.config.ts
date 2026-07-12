@@ -8,7 +8,7 @@ export default defineConfig({
   base: "./",
   resolve: {
     alias: {
-      croft: resolve(__dirname, "../src/index.ts"),
+      "@lemonadee/croft": resolve(__dirname, "../src/index.ts"),
     },
   },
   build: {
