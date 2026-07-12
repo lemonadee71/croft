@@ -33,7 +33,8 @@ jobs:
           LABELS: ${{ toJSON(github.event.pull_request.labels) }}
         run: |
           # Skip if a changeset already exists on this branch
-          EXISTING=$(ls .changeset/auto-*.md 2>/dev/null)
+          mkdir -p .changeset
+          EXISTING=$(find .changeset -maxdepth 1 -name 'auto-*.md' -print -quit)
           if [ -n "$EXISTING" ]; then
             echo "Changeset already exists, skipping"
             cat "$EXISTING"
