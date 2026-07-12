@@ -2,7 +2,7 @@ name: Auto Changeset
 
 on:
   pull_request:
-    types: [opened, labeled]
+    types: [labeled]
 
 permissions:
   contents: write
@@ -32,13 +32,13 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           LABELS: ${{ toJSON(github.event.pull_request.labels) }}
         run: |
-          # Skip if a changeset already exists on this branch
           mkdir -p .changeset
-          EXISTING=$(find .changeset -maxdepth 1 -name 'auto-*.md' -print -quit)
-          if [ -n "$EXISTING" ]; then
-            echo "Changeset already exists, skipping"
-            cat "$EXISTING"
-            exit 0
+
+          # Remove any previous auto-generated changeset
+          PREV=$(find .changeset -maxdepth 1 -name 'auto-*.md' -print -quit)
+          if [ -n "$PREV" ]; then
+            rm "$PREV"
+            echo "Removed previous changeset: $PREV"
           fi
 
           # Determine bump type
@@ -49,7 +49,7 @@ jobs:
             BUMP="minor"
           fi
 
-          # Write changeset file
+          # Write new changeset file
           cat > ".changeset/auto-$(date +%s).md" <<- EOF
           ---
           "@lemonadee/croft": $BUMP
@@ -64,5 +64,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .changeset/
-          git commit -m "chore: auto-generate changeset"
+          git commit -m "chore: auto-generate changeset ($BUMP)"
           git push
