@@ -56,7 +56,7 @@ try {
 } catch {}
 
 export const triggerLifecycle = (type: string, root: Element) => {
-  traverse(root, (node) => node.dispatchEvent(new _Event(`@${type}`)));
+  traverse(root, (node) => void node.dispatchEvent(new _Event(`@${type}`)));
 };
 
 const inDocument = (node: Node): boolean => !!_document?.body?.contains(node);
