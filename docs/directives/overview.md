@@ -54,6 +54,7 @@ When `resolveAttributes` runs, it:
 | `:visible=${val}` | `_visible` | Toggles `visibility: hidden` |
 | `onEvent=${fn}` | `onEvent` | Event handler (+ modifiers) |
 | `on={...}` | `on` | Object-map of event handlers |
+| `:model=${val}` | `model` | Two-way value binding on inputs |
 
 ## Value Resolution
 

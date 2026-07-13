@@ -21,9 +21,10 @@ import {
   getPlaceholderId,
   getPlaceholders,
   createMarkers,
+  HOOK_TARGET,
 } from "./utils";
 
-import { watch } from "./hooks";
+import { watch, getProxy } from "./hooks";
 import {
   BuiltinDirectives,
   DirectivesRegistry,
@@ -120,6 +121,11 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
               element.prepend(head);
               element.append(tail);
               options.target = marker;
+            }
+
+            if (type === "model" && match && isHook(value)) {
+              handleModel(element, value);
+              continue;
             }
 
             modifyElement(element, type, {
@@ -313,4 +319,27 @@ export const modifyElement = (
   }
 
   return element;
+};
+
+const handleModel = (element: HTMLElement, hook: any) => {
+  const isInput = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
+  if (!isInput) return;
+
+  const proxy = getProxy(hook[HOOK_TARGET]);
+  if (!proxy) return;
+  const prop = hook.data.prop;
+
+  element.value = String(resolve(hook.data.value, hook.data.transform) ?? "");
+
+  const updateElement = (newValue: any) => {
+    const v = resolve(newValue, hook.data.transform);
+    element.value = String(v ?? "");
+  };
+  const unsubscribe = watch(hook, updateElement);
+  element.addEventListener("@destroy", () => unsubscribe());
+
+  element.addEventListener("input", () => {
+    // @ts-ignore
+    proxy[prop] = (element as HTMLInputElement).value;
+  });
 };

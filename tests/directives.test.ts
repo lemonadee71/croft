@@ -394,3 +394,50 @@ describe("skip", () => {
     expect(target()).toHaveTextContent("");
   });
 });
+
+describe(":model", () => {
+  it("sets input value from a static string", () => {
+    render(html`<input data-target :model="hello" />`);
+    expect(target()).toHaveValue("hello");
+  });
+
+  it("sets input value from applyProps", () => {
+    const input = document.createElement("input");
+    applyProps(input, { model: "static" });
+    expect(input).toHaveValue("static");
+  });
+
+  it("sets initial value from hook and syncs on input event", () => {
+    const state = createHook({ name: "initial" });
+    render(html`<input data-target :model=${state.$name} />`);
+    expect(target()).toHaveValue("initial");
+
+    const input = target() as HTMLInputElement;
+    input.value = "updated";
+    fireEvent.input(input);
+    expect(state.name).toBe("updated");
+  });
+
+  it("updates input value when hook changes", () => {
+    const state = createHook({ name: "start" });
+    render(html`<input data-target :model=${state.$name} />`);
+    expect(target()).toHaveValue("start");
+
+    state.name = "changed";
+    expect(target()).toHaveValue("changed");
+  });
+
+  it("works with textarea elements", () => {
+    const state = createHook({ body: "text" });
+    render(html`<textarea data-target :model=${state.$body}></textarea>`);
+    expect(target()).toHaveValue("text");
+
+    state.body = "new text";
+    expect(target()).toHaveValue("new text");
+
+    const textarea = target() as HTMLTextAreaElement;
+    textarea.value = "typed";
+    fireEvent.input(textarea);
+    expect(state.body).toBe("typed");
+  });
+});

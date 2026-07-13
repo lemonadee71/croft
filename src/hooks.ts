@@ -22,6 +22,9 @@ interface HookData {
 }
 
 const HookRegistry = new WeakMap<object, HookData>();
+const proxyByTarget = new WeakMap<object, object>();
+
+export const getProxy = (target: object): object | undefined => proxyByTarget.get(target);
 
 export const createHook = <T extends any>(value: T, seal = true): HookState<NormalizedState<T>> => {
   let obj: any = isPlainObject(value) ? value : { value };
@@ -86,6 +89,7 @@ const getter = (target: any, rawProp: string | symbol, receiver: any): any => {
   const prop = rawProp.replace(/^\$/, "");
 
   if (rawProp.startsWith("$") && prop in target) {
+    proxyByTarget.set(target, receiver);
     return createHookRef(target, prop, target[prop]);
   }
 

@@ -392,6 +392,15 @@ export const BuiltinDirectives: RegistryEntry[] = [
       else element.style.visibility = "hidden";
     },
   }),
+  toEntry({
+    type: "model",
+    match: { attrName: ":model", objKey: "model" },
+    callback: (element, data) => {
+      if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+        element.value = String(data.value ?? "");
+      }
+    },
+  }),
 ];
 
 // ============= RESOLUTION =============
