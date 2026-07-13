@@ -1,6 +1,7 @@
 import { createHook } from "./hooks";
 
 export const HOOK_TARGET = Symbol.for("croft:hook-target");
+export const HOOK_DATA = Symbol.for("croft:hook-data");
 
 export const PLACEHOLDER_REGEX = /__\S+__/;
 export const WRAPPING_BRACKETS = /^\[|\]$/g;

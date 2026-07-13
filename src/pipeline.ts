@@ -22,6 +22,7 @@ import {
   getPlaceholders,
   createMarkers,
   HOOK_TARGET,
+  HOOK_DATA,
 } from "./utils";
 
 import { watch, getProxy } from "./hooks";
@@ -127,7 +128,7 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
               element.removeAttribute(rawName);
               const proxy = getProxy(value[HOOK_TARGET]);
               if (proxy) {
-                const prop = value.data.prop;
+                const prop = value[HOOK_DATA].prop;
                 applyProps(element, {
                   value,
                   onInput: () => {
@@ -155,8 +156,8 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
 // ============= HOOK HELPERS =============
 
 const addTransform = (hook: any, callback: Function) => {
-  const previousTransform = hook.data.transform;
-  hook.data.transform = compose((value: any) => resolve(value, previousTransform), callback);
+  const previousTransform = hook[HOOK_DATA].transform;
+  hook[HOOK_DATA].transform = compose((value: any) => resolve(value, previousTransform), callback);
   return hook;
 };
 
@@ -189,7 +190,7 @@ const bindHook = (
   }
 
   const updateDOM = (newValue: any) => {
-    const resolvedValue = resolve(newValue, hook.data.transform);
+    const resolvedValue = resolve(newValue, hook[HOOK_DATA].transform);
     modifyElement(options.element, options.type, {
       key: options.target,
       value: resolvedValue,
@@ -200,7 +201,7 @@ const bindHook = (
 
   options.element.addEventListener("@destroy", () => unsubscribe());
 
-  return resolve(hook.data.value, hook.data.transform);
+  return resolve(hook[HOOK_DATA].value, hook[HOOK_DATA].transform);
 };
 
 const resolveValue = (value: any, options: { element: HTMLElement; type: string; target: any }) => {

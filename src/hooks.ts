@@ -1,4 +1,4 @@
-import { HOOK_TARGET, isHook, isPlainObject, compose } from "./utils";
+import { HOOK_TARGET, HOOK_DATA, isHook, isPlainObject, compose } from "./utils";
 
 export type HookRef<V> = {
   // Mapping / transform function — second arg is a plain snapshot of all hook properties
@@ -36,13 +36,13 @@ export const createHook = <T extends any>(value: T, seal = true): HookState<Norm
 };
 
 const methodForwarder = (target: any, prop: string | symbol): any => {
-  const previousTransform = target.data.transform || ((val: any) => val);
+  const previousTransform = target[HOOK_DATA].transform || ((val: any) => val);
 
   const callback = (...args: any[]) => {
     const copy = {
       [HOOK_TARGET]: target[HOOK_TARGET],
-      data: {
-        ...target.data,
+      [HOOK_DATA]: {
+        ...target[HOOK_DATA],
         transform: compose(previousTransform, (value: any) => value[prop](...args)),
       },
     };
@@ -50,7 +50,7 @@ const methodForwarder = (target: any, prop: string | symbol): any => {
     return new Proxy(copy, { get: methodForwarder });
   };
 
-  if (prop === HOOK_TARGET || prop === "data") return target[prop];
+  if (prop === HOOK_TARGET || prop === HOOK_DATA) return target[prop];
   return callback;
 };
 
@@ -60,7 +60,7 @@ const createHookRef = (ref: any, prop: string, value: any): any => {
 
     const result = {
       [HOOK_TARGET]: ref,
-      data: {
+      [HOOK_DATA]: {
         prop,
         transform: wrapped,
         value,
@@ -128,7 +128,7 @@ export const watch = <V>(
   if (!data) throw new Error("Hook target registry entry not found");
 
   const { listeners } = data;
-  const prop = hook.data.prop;
+  const prop = hook[HOOK_DATA].prop;
 
   if (!listeners.has(prop)) {
     listeners.set(prop, new Set());
@@ -152,7 +152,7 @@ export const unwatch = <V>(
   if (!data) return;
 
   const { listeners } = data;
-  const prop = hook.data.prop;
+  const prop = hook[HOOK_DATA].prop;
   const set = listeners.get(prop);
   if (set) {
     callbacks.forEach((cb) => set.delete(cb));

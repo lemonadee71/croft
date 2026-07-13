@@ -1,4 +1,11 @@
-import { PLACEHOLDER_REGEX, getChildren, traverse, getPlaceholderId, isHook } from "./utils";
+import {
+  PLACEHOLDER_REGEX,
+  getChildren,
+  traverse,
+  getPlaceholderId,
+  isHook,
+  HOOK_DATA,
+} from "./utils";
 import { createElementFromTemplate, processDirectives } from "./pipeline";
 import type { Template } from "./utils";
 
@@ -21,7 +28,7 @@ export const removeComponent = (name: string) => {
 };
 
 const resolvePropValue = (value: any): any => {
-  if (isHook(value)) return (value as { data?: { value?: any } }).data?.value;
+  if (isHook(value)) return value[HOOK_DATA]?.value;
   return value;
 };
 

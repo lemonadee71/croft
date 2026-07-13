@@ -275,11 +275,12 @@ describe("HookRef transform second parameter (plain state)", () => {
     const isLong = length((n: number) => n > 2);
 
     // Verify the chained trap data structure
-    expect((isLong as any).data.prop).toBe("items");
-    expect(typeof (isLong as any).data.transform).toBe("function");
+    const HOOK_DATA = Symbol.for("croft:hook-data");
+    expect((isLong as any)[HOOK_DATA].prop).toBe("items");
+    expect(typeof (isLong as any)[HOOK_DATA].transform).toBe("function");
 
     // Resolve manually to verify correct transform composition
-    const resolved = (isLong as any).data.transform((isLong as any).data.value);
+    const resolved = (isLong as any)[HOOK_DATA].transform((isLong as any)[HOOK_DATA].value);
     expect(resolved).toBe(true);
 
     render(html`<div data-target :text=${isLong}></div>`);
@@ -344,6 +345,6 @@ describe("method forwarding", () => {
 
     expect(state.value).toBe("abc");
     // @ts-ignore forwarded is HookRef at runtime
-    expect((forwarded as any).data.value).toBe("abc");
+    expect((forwarded as any)[Symbol.for("croft:hook-data")].value).toBe("abc");
   });
 });
