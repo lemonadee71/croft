@@ -32,23 +32,25 @@ Always run `pnpm format && pnpm lint` after making code changes.
 
 ## Architecture
 
-- **createHook** → ES6 Proxy-based reactive state with pub/sub — `docs/reactivity/create-hook.md`
-- **`$`-prefixed access** on hook state returns a `HookRef` (callable proxy) — `docs/reactivity/create-hook.md`
-- **Traps** (`store.$prop(fn)`) — transform the value reactively; `isHook()` detects these — `docs/reactivity/create-hook.md#traps--transforms`
-- **methodForwarder** — `.map()`, `.filter()`, `.toUpperCase()` on `$` refs chain as transforms — `docs/reactivity/method-forwarding.md`
-- **Chaining** — trap results are callable: `store.$items((i) => i.length)((n) => n > 2)`
-- **`html`** tagged template → `Template` object with placeholder IDs — `docs/templates/html-tag.md`
-- **`render`** → parses template, runs pipeline (`resolveBody` → `resolveAttributes` → components) — `docs/templates/render.md`
-- **Pipeline** — the full resolve chain order — `docs/pipeline.md`
-- **Directives** — `:text`, `:html`, `:show`, `:children`, `class:`, `style:`, `on*` events, etc. — `docs/directives/overview.md`
-- **Components** — `defineComponent("tag-name", (props, slots) => Template)` — `docs/components/define-component.md`
-- **Lifecycles** — `onCreate`, `onMount`, `onUnmount`, `onDestroy` via MutationObserver — `docs/lifecycles/dom-lifecycles.md`
-- **Markers** — comment nodes (`data-key`) track hook boundaries — `docs/directives/children.md`
-- `isHook()` check: looks for `Symbol.for("croft:hook-target")` on value — `docs/reactivity/create-hook.md`
-- `watch()` / `unwatch()` — programmatic subscription to hook property changes — `docs/reactivity/watch.md`
-- **Reactivity patterns** — `docs/reactivity/patterns.md`
-- **Slots** — template insertion in components — `docs/components/slots.md`
-- **Conditional rendering & lists** — `docs/templates/conditional-lists.md`
+| Concept | Description | Docs |
+|---|---|---|
+| `createHook` | ES6 Proxy-based reactive state with pub/sub | [`docs/reactivity/create-hook.md`](docs/reactivity/create-hook.md) |
+| `$`-prefixed access | Returns a `HookRef` (callable proxy) | [`docs/reactivity/create-hook.md`](docs/reactivity/create-hook.md) |
+| Traps | `store.$prop(fn)` — transform the value reactively; `isHook()` detects these | [`docs/reactivity/create-hook.md#traps--transforms`](docs/reactivity/create-hook.md#traps--transforms) |
+| methodForwarder | `.map()`, `.filter()`, `.toUpperCase()` on `$` refs chain as transforms | [`docs/reactivity/method-forwarding.md`](docs/reactivity/method-forwarding.md) |
+| Chaining | Trap results are callable: `store.$items((i) => i.length)((n) => n > 2)` | |
+| `html` tag | Tagged template → `Template` object with placeholder IDs | [`docs/templates/html-tag.md`](docs/templates/html-tag.md) |
+| `render` | Parses template, runs pipeline (`resolveBody` → `resolveAttributes` → components) | [`docs/templates/render.md`](docs/templates/render.md) |
+| Pipeline | The full resolve chain order | [`docs/pipeline.md`](docs/pipeline.md) |
+| Directives | `:text`, `:html`, `:show`, `:children`, `class:`, `style:`, `on*` events, etc. | [`docs/directives/overview.md`](docs/directives/overview.md) |
+| Components | `defineComponent("tag-name", (props, slots) => Template)` | [`docs/components/define-component.md`](docs/components/define-component.md) |
+| Lifecycles | `onCreate`, `onMount`, `onUnmount`, `onDestroy` via MutationObserver | [`docs/lifecycles/dom-lifecycles.md`](docs/lifecycles/dom-lifecycles.md) |
+| Markers | Comment nodes (`data-key`) track hook boundaries | [`docs/directives/children.md`](docs/directives/children.md) |
+| `isHook()` | Checks for `Symbol.for("croft:hook-target")` on value | [`docs/reactivity/create-hook.md`](docs/reactivity/create-hook.md) |
+| `watch` / `unwatch` | Programmatic subscription to hook property changes | [`docs/reactivity/watch.md`](docs/reactivity/watch.md) |
+| Reactivity patterns | Patterns and best practices | [`docs/reactivity/patterns.md`](docs/reactivity/patterns.md) |
+| Slots | Template insertion in components | [`docs/components/slots.md`](docs/components/slots.md) |
+| Conditional rendering & lists | Conditionals and list rendering | [`docs/templates/conditional-lists.md`](docs/templates/conditional-lists.md) |
 
 ## CI
 
