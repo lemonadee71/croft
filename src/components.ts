@@ -138,7 +138,7 @@ export const warnUnregistered = (root: HTMLElement | DocumentFragment) => {
         const tagName = el.tagName.toLowerCase();
         if (tagName.includes("-") && !ComponentsRegistry.has(tagName)) {
           console.warn(
-            `[peasant-jsx] Unregistered custom element: <${tagName}>. ` +
+            `[croft] Unregistered custom element: <${tagName}>. ` +
               `Did you forget to call defineComponent("${tagName}", ...)?`
           );
         }

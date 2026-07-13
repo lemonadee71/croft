@@ -110,7 +110,7 @@ const toEntry = (dir: Directive): RegistryEntry => {
 // ============= PUBLIC API =============
 
 /**
- * Registers one or more custom directives to extend peasant-jsx.
+ * Registers one or more custom directives to extend Croft.
  * @param directives The custom directive configurations to register.
  */
 export const addDirective = (...directives: Directive[]) => {

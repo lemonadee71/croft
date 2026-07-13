@@ -44,7 +44,7 @@ Always run `pnpm format && pnpm lint` after making code changes.
 - **Components** — `defineComponent("tag-name", (props, slots) => Template)` — `docs/components/define-component.md`
 - **Lifecycles** — `onCreate`, `onMount`, `onUnmount`, `onDestroy` via MutationObserver — `docs/lifecycles/dom-lifecycles.md`
 - **Markers** — comment nodes (`data-key`) track hook boundaries — `docs/directives/children.md`
-- `isHook()` check: looks for `Symbol.for("peasant-jsx:hook-target")` on value — `docs/reactivity/create-hook.md`
+- `isHook()` check: looks for `Symbol.for("croft:hook-target")` on value — `docs/reactivity/create-hook.md`
 - `watch()` / `unwatch()` — programmatic subscription to hook property changes — `docs/reactivity/watch.md`
 - **Reactivity patterns** — `docs/reactivity/patterns.md`
 - **Slots** — template insertion in components — `docs/components/slots.md`

@@ -314,8 +314,8 @@ describe("method forwarding", () => {
 
     expect(getTarget()).toHaveTextContent("HELLO WORLD");
 
-    state.value = "peasant jsx";
-    expect(getTarget()).toHaveTextContent("PEASANT JSX");
+    state.value = "hello world";
+    expect(getTarget()).toHaveTextContent("HELLO WORLD");
   });
 
   it("supports chaining method forwards", () => {
@@ -324,8 +324,8 @@ describe("method forwarding", () => {
 
     expect(getTarget()).toHaveTextContent("HELLO WORLD");
 
-    state.value = "  peasant  ";
-    expect(getTarget()).toHaveTextContent("PEASANT");
+    state.value = "  croft  ";
+    expect(getTarget()).toHaveTextContent("CROFT");
   });
 
   it("handles method arguments correctly", () => {

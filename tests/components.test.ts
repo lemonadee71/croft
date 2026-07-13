@@ -269,7 +269,7 @@ describe("complex component scenarios", () => {
   it("targets named slots via <slot> elements and slot attribute", () => {
     defineComponent(
       "my-split",
-      (_props: any, slots: any) => html`
+      (_props: any, _slots: any) => html`
         <div data-testid="split">
           <header><slot name="header"></slot></header>
           <main><slot></slot></main>
@@ -298,7 +298,7 @@ describe("complex component scenarios", () => {
   it("uses fallback content when no matching slot children are provided", () => {
     defineComponent(
       "my-fallback",
-      (_props: any, slots: any) => html`
+      (_props: any, _slots: any) => html`
         <div data-testid="fallback">
           <slot name="header"><h1>Default Header</h1></slot>
           <slot><p>Default body</p></slot>
@@ -315,7 +315,7 @@ describe("complex component scenarios", () => {
   it("replaces fallback content when matching slot children exist", () => {
     defineComponent(
       "my-fallback",
-      (_props: any, slots: any) => html`
+      (_props: any, _slots: any) => html`
         <div data-testid="replace">
           <slot name="header"><h1>Default Header</h1></slot>
           <slot><p>Default body</p></slot>
@@ -358,7 +358,7 @@ describe("complex component scenarios", () => {
   it("uses slots at the component root without a wrapping element", () => {
     defineComponent(
       "my-skinny",
-      (_props: any, slots: any) => html`<slot name="a"></slot><slot name="b"></slot>`
+      (_props: any, _slots: any) => html`<slot name="a"></slot><slot name="b"></slot>`
     );
 
     render(
@@ -396,7 +396,7 @@ describe("complex component scenarios", () => {
   it("removes <slot> element with no matching children and no fallback", () => {
     defineComponent(
       "my-empty",
-      (_props: any, slots: any) =>
+      (_props: any, _slots: any) =>
         html`<div data-testid="empty">
           <slot name="missing"></slot>
           <span>content</span>
@@ -431,7 +431,7 @@ describe("complex component scenarios", () => {
 
     defineComponent(
       "my-actions",
-      (_props: any, slots: any) =>
+      (_props: any, _slots: any) =>
         html`<div data-testid="actions"><slot name="buttons"></slot></div>`
     );
 
@@ -456,7 +456,7 @@ describe("complex component scenarios", () => {
 
     defineComponent(
       "my-parent",
-      (_props: any, slots: any) => html`<div data-testid="parent"><slot name="child"></slot></div>`
+      (_props: any, _slots: any) => html`<div data-testid="parent"><slot name="child"></slot></div>`
     );
 
     render(

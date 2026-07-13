@@ -1,6 +1,6 @@
 import { createHook } from "./hooks";
 
-export const HOOK_TARGET = Symbol.for("peasant_hook_target");
+export const HOOK_TARGET = Symbol.for("croft:hook-target");
 
 export const PLACEHOLDER_REGEX = /__\S+__/;
 export const WRAPPING_BRACKETS = /^\[|\]$/g;
@@ -261,8 +261,8 @@ export const getBoundary = (id: string, nodes: Node[]): [number, number] => {
 export const createMarkers = (): [Comment, Comment, string] => {
   const id = uid();
 
-  const head = document.createComment("{peasant-jsx-start}");
-  const tail = document.createComment("{peasant-jsx-end}");
+  const head = document.createComment("{croft-start}");
+  const tail = document.createComment("{croft-end}");
   setMetadata(head, "key", `start_${id}`);
   setMetadata(tail, "key", `end_${id}`);
 
