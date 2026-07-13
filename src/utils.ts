@@ -194,10 +194,12 @@ export const removeChildren = (parent: Node): void => {
 
 export const traverse = (
   element: Element,
-  callback: (el: Element) => void,
+  callback: (el: Element) => void | false,
   topDown = true
 ): void => {
-  if (topDown) callback(element);
+  if (topDown) {
+    if (callback(element) === false) return;
+  }
 
   if (element.childElementCount) {
     getChildren(element).forEach((child) => traverse(child, callback, topDown));

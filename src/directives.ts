@@ -352,19 +352,8 @@ export const BuiltinDirectives: RegistryEntry[] = [
   toEntry({
     type: "skip",
     match: { attrName: ":skip", objKey: "_skip" },
-    callback: (element, data) => {
-      if (!data.value) {
-        setMetadata(element, "skip", { all: true });
-      } else {
-        const options = data.value.split(",");
-        const others = options.filter((str: string) => !["all", "attr"].includes(str));
-
-        setMetadata(element, "skip", {
-          all: options.includes("all"),
-          attr: options.includes("attr"),
-          others,
-        });
-      }
+    callback: (element, _data) => {
+      setMetadata(element, "skip", true);
     },
   }),
   toEntry({

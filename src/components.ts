@@ -82,6 +82,7 @@ export const resolveComponents = (
     traverse(
       child,
       (el) => {
+        if ((el as any).__meta?.skip) return false;
         if (ComponentsRegistry.has(el.tagName.toLowerCase())) {
           customElements.push(el);
         }

@@ -368,3 +368,29 @@ describe("modifyElement", () => {
     expect(div.classList.contains("active")).toBe(true);
   });
 });
+
+describe("skip", () => {
+  it("prevents directive processing on the element itself", () => {
+    const state = createHook("should not appear");
+    render(html`<div data-target :skip :text=${state.$value}></div>`);
+    expect(target()).toHaveTextContent("");
+  });
+
+  it("prevents directive processing on descendants", () => {
+    const state = createHook("should not appear");
+    render(html`<div :skip><div data-target :text=${state.$value}></div></div>`);
+    expect(target()).toHaveTextContent("");
+  });
+
+  it("prevents body interpolation in the subtree", () => {
+    const state = createHook("should not appear");
+    render(html`<div :skip><div data-target>${state.$value}</div></div>`);
+    expect(target().textContent).not.toContain("should not appear");
+  });
+
+  it("works via object key syntax", () => {
+    const state = createHook("should not appear");
+    render(html`<div data-target ${{ _skip: true }} :text=${state.$value}></div>`);
+    expect(target()).toHaveTextContent("");
+  });
+});

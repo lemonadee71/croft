@@ -34,12 +34,24 @@ import { runLifecycle, triggerLifecycle } from "./lifecycle";
 
 // ============= RESOLVE BODY =============
 
+const hasSkipAncestor = (element: HTMLElement | null): boolean => {
+  let current: any = element;
+  while (current) {
+    if (current.__meta?.skip) return true;
+    current = current.parentElement;
+  }
+  return false;
+};
+
 const resolveBody = (root: HTMLElement | DocumentFragment, values: Record<string, any>) => {
   for (const node of getPlaceholders(root)) {
+    const parent = node.parentElement as HTMLElement;
+    if (!parent || hasSkipAncestor(parent)) continue;
+
     const text = (node.textContent || "").trim();
     const value = values[getPlaceholderId(text)];
     const options = {
-      element: node.parentElement as HTMLElement,
+      element: parent,
       type: "children" as const,
       target: undefined as any,
     };
@@ -61,6 +73,9 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
   for (const child of getChildren(root)) {
     traverse(child, (element: any) => {
       if (element.__meta?.hydrated) return;
+
+      // If this element has skip, don't process it or any descendants
+      if (element.__meta?.skip) return false;
 
       for (const attr of Array.from(element.attributes) as Attr[]) {
         const rawName = attr.name;
@@ -209,6 +224,31 @@ export const createElementFromTemplate = (template: Template): DocumentFragment 
 };
 
 /**
+ * Pre-processes :skip directives so the metadata is available during body resolution and
+ * attribute processing.
+ */
+const preprocessSkip = (root: HTMLElement | DocumentFragment, context: Record<string, any>) => {
+  for (const child of getChildren(root)) {
+    traverse(child, (element: any) => {
+      if (element.getAttribute(":skip") !== null) {
+        setMetadata(element, "skip", true);
+        element.removeAttribute(":skip");
+        return false;
+      }
+
+      for (const attr of Array.from(element.attributes) as Attr[]) {
+        if (!isPlaceholder(attr.name)) continue;
+        const value = context[getPlaceholderId(attr.name)];
+        if (isPlainObject(value) && value._skip) {
+          setMetadata(element, "skip", true);
+          return false;
+        }
+      }
+    });
+  }
+};
+
+/**
  * Traverses a root element and processes placeholders/directives using values context.
  * Component resolution is handled separately by the caller.
  */
@@ -217,6 +257,7 @@ export const processDirectives = (
   context: Record<string, any>
 ) => {
   const fns: Array<(root: HTMLElement | DocumentFragment, context: Record<string, any>) => void> = [
+    preprocessSkip,
     resolveBody,
   ];
 
