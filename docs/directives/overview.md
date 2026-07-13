@@ -52,6 +52,7 @@ When `resolveAttributes` runs, it:
 | `:skip` | `_skip` | Skips directive processing on subtree |
 | `:show=${val}` | `_show` | Toggles `display: none` |
 | `:visible=${val}` | `_visible` | Toggles `visibility: hidden` |
+| `:value=${val}` | `value` | Sets input/textarea live `.value` |
 | `onEvent=${fn}` | `onEvent` | Event handler (+ modifiers) |
 | `on={...}` | `on` | Object-map of event handlers |
 | `:model=${val}` | `model` | Two-way value binding on inputs |

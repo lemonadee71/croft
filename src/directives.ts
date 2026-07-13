@@ -393,12 +393,19 @@ export const BuiltinDirectives: RegistryEntry[] = [
     },
   }),
   toEntry({
-    type: "model",
-    match: { attrName: ":model", objKey: "model" },
+    type: "value",
+    match: { attrName: ":value", objKey: "value" },
     callback: (element, data) => {
       if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
         element.value = String(data.value ?? "");
       }
+    },
+  }),
+  toEntry({
+    type: "model",
+    match: { attrName: ":model", objKey: "model" },
+    callback: (element, data, modifyElement) => {
+      modifyElement(element, "value", { key: "value", value: data.value });
     },
   }),
 ];

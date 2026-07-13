@@ -124,7 +124,18 @@ const resolveAttributes = (root: HTMLElement | DocumentFragment, values: Record<
             }
 
             if (type === "model" && match && isHook(value)) {
-              handleModel(element, value);
+              element.removeAttribute(rawName);
+              const proxy = getProxy(value[HOOK_TARGET]);
+              if (proxy) {
+                const prop = value.data.prop;
+                applyProps(element, {
+                  value,
+                  onInput: () => {
+                    // @ts-ignore
+                    proxy[prop] = (element as HTMLInputElement).value;
+                  },
+                });
+              }
               continue;
             }
 
@@ -319,27 +330,4 @@ export const modifyElement = (
   }
 
   return element;
-};
-
-const handleModel = (element: HTMLElement, hook: any) => {
-  const isInput = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement;
-  if (!isInput) return;
-
-  const proxy = getProxy(hook[HOOK_TARGET]);
-  if (!proxy) return;
-  const prop = hook.data.prop;
-
-  element.value = String(resolve(hook.data.value, hook.data.transform) ?? "");
-
-  const updateElement = (newValue: any) => {
-    const v = resolve(newValue, hook.data.transform);
-    element.value = String(v ?? "");
-  };
-  const unsubscribe = watch(hook, updateElement);
-  element.addEventListener("@destroy", () => unsubscribe());
-
-  element.addEventListener("input", () => {
-    // @ts-ignore
-    proxy[prop] = (element as HTMLInputElement).value;
-  });
 };

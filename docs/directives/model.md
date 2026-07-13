@@ -1,6 +1,6 @@
 # model
 
-Two-way data binding for form inputs. Syncs a hook value to the element and listens for user input to update the hook.
+Two-way data binding for form inputs. Composes the `:value` directive with an `input` event listener that writes back to the hook.
 
 ## Syntax
 
@@ -13,8 +13,7 @@ applyProps(element, { model: "initial" });
 
 ## Behavior
 
-- Sets `element.value` from the hook's current value
-- Watches the hook for changes and updates the element
+- Delegates element value management to the [`:value`](value.md) directive
 - Listens to `input` events and writes back to the hook
 
 ## Example
@@ -44,7 +43,7 @@ Only `<input>` and `<textarea>` elements are supported. Other element types are 
 
 When a hook is used with `:model`, two-way binding is set up:
 
-1. **Hook → Element**: Changes to the hook update the element's value (via `watch`).
+1. **Hook → Element**: Changes to the hook update the element's value (via `:value`'s watcher).
 2. **Element → Hook**: The `input` event updates the hook value (via the proxy setter, which notifies watchers).
 
 ## vs Manual Binding
@@ -54,9 +53,10 @@ When a hook is used with `:model`, two-way binding is set up:
 const state = createHook({ search: "" });
 html`<input :model=${state.$search} />`;
 
-// Manual equivalent — need watch + event listener
+// Manual equivalent — :value + onInput
 const state = createHook({ search: "" });
 html`<input :value=${state.$search} onInput=${(e: Event) => {
   state.search = (e.target as HTMLInputElement).value;
 }} />`;
+// :model is sugar over the above
 ```

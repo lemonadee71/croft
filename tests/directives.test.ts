@@ -395,6 +395,32 @@ describe("skip", () => {
   });
 });
 
+describe(":value", () => {
+  it("sets input value from a static string", () => {
+    render(html`<input data-target :value="hello" />`);
+    expect(target()).toHaveValue("hello");
+  });
+
+  it("sets input value from applyProps", () => {
+    const input = document.createElement("input");
+    applyProps(input, { value: "from-props" });
+    expect(input).toHaveValue("from-props");
+  });
+
+  it("is reactive with hooks", () => {
+    const state = createHook({ name: "a" });
+    render(html`<input data-target :value=${state.$name} />`);
+    expect(target()).toHaveValue("a");
+    state.name = "b";
+    expect(target()).toHaveValue("b");
+  });
+
+  it("sets textarea value", () => {
+    render(html`<textarea data-target :value="text"></textarea>`);
+    expect(target()).toHaveValue("text");
+  });
+});
+
 describe(":model", () => {
   it("sets input value from a static string", () => {
     render(html`<input data-target :model="hello" />`);
