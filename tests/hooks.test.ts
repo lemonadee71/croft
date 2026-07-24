@@ -1,4 +1,5 @@
-import { applyProps, html, createHook, watch, unwatch } from "../src";
+import { applyProps, html, createHook, computed, watch, unwatch } from "../src";
+import { isHook } from "../src/utils";
 import { renderToBody as render, getTarget, useTestScope } from "./utils";
 
 useTestScope();
@@ -346,5 +347,106 @@ describe("method forwarding", () => {
     expect(state.value).toBe("abc");
     // @ts-ignore forwarded is HookRef at runtime
     expect((forwarded as any)[Symbol.for("croft:hook-data")].value).toBe("abc");
+  });
+});
+
+describe("computed", () => {
+  it("derives value from a hook property", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+    expect(doubled.value).toBe(0);
+  });
+
+  it("updates when dependency changes", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+
+    state.count = 5;
+    expect(doubled.value).toBe(10);
+  });
+
+  it("caches and does not re-evaluate when dependencies are unchanged", () => {
+    const state = createHook({ count: 0 });
+    const fn = vi.fn(() => state.count * 2);
+    const doubled = computed(fn);
+
+    expect(fn).toHaveBeenCalledTimes(0); // lazy — not evaluated yet
+    expect(doubled.value).toBe(0);
+    expect(fn).toHaveBeenCalledTimes(1); // first read triggers evaluation
+
+    expect(doubled.value).toBe(0);
+    expect(fn).toHaveBeenCalledTimes(1); // cached — getter not re-called
+
+    state.count = 5;
+    expect(doubled.value).toBe(10);
+    expect(fn).toHaveBeenCalledTimes(2); // re-evaluated on change
+  });
+
+  it("depends on multiple hook properties", () => {
+    const state = createHook({ x: 1, y: 2 });
+    const sum = computed(() => state.x + state.y);
+
+    expect(sum.value).toBe(3);
+
+    state.x = 10;
+    expect(sum.value).toBe(12);
+
+    state.y = 20;
+    expect(sum.value).toBe(30);
+  });
+
+  it("works with templates", () => {
+    const state = createHook({ name: "World" });
+    const greeting = computed(() => "Hello, " + state.name + "!");
+
+    render(html`<div data-target :text=${greeting}></div>`);
+
+    expect(getTarget()).toHaveTextContent("Hello, World!");
+
+    state.name = "Croft";
+    expect(getTarget()).toHaveTextContent("Hello, Croft!");
+  });
+
+  it("works with watch", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+    const mock = vi.fn();
+
+    watch(doubled, mock);
+
+    state.count = 5;
+    expect(mock).toHaveBeenCalledWith(10, expect.any(Object));
+  });
+
+  it("can depend on another computed", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+    const quadrupled = computed(() => doubled.value * 2);
+
+    expect(quadrupled.value).toBe(0);
+
+    state.count = 3;
+    expect(doubled.value).toBe(6);
+    expect(quadrupled.value).toBe(12);
+  });
+
+  it("is detected as a hook by isHook", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+
+    expect(isHook(doubled)).toBe(true);
+  });
+
+  it("re-evaluates lazily when value is read inside an effect", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+    const fn = vi.fn();
+
+    // Reading inside a watch callback (simulating effect context)
+    watch(doubled, fn);
+
+    state.count = 5;
+    expect(fn).toHaveBeenCalledWith(10, expect.any(Object));
+    expect(doubled.value).toBe(10);
   });
 });

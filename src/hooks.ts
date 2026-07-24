@@ -24,7 +24,138 @@ interface HookData {
 const HookRegistry = new WeakMap<object, HookData>();
 const proxyByTarget = new WeakMap<object, object>();
 
+// ============= DEPENDENCY TRACKING (for computed / effect) =============
+
+const targetMap = new WeakMap<object, Map<string, Set<() => void>>>();
+const effectToDeps = new WeakMap<() => void, Set<{ target: object; prop: string }>>();
+let activeEffect: (() => void) | null = null;
+const effectStack: Array<(() => void) | null> = [];
+
+/** Push current effect onto stack and set a new active effect for tracking. */
+const pushEffect = (effect: () => void) => {
+  effectStack.push(activeEffect);
+  activeEffect = effect;
+};
+
+/** Restore the previous active effect (popped from stack). */
+const popEffect = () => {
+  activeEffect = effectStack.pop() ?? null;
+};
+
+const cleanupEffect = (fn: () => void) => {
+  const deps = effectToDeps.get(fn);
+  if (!deps) return;
+  for (const { target, prop } of deps) {
+    targetMap.get(target)?.get(prop)?.delete(fn);
+  }
+  deps.clear();
+};
+
+export const track = (target: object, prop: string) => {
+  if (!activeEffect) return;
+  let depsMap = targetMap.get(target);
+  if (!depsMap) {
+    depsMap = new Map();
+    targetMap.set(target, depsMap);
+  }
+  let depSet = depsMap.get(prop);
+  if (!depSet) {
+    depSet = new Set();
+    depsMap.set(prop, depSet);
+  }
+  depSet.add(activeEffect);
+
+  let tracked = effectToDeps.get(activeEffect);
+  if (!tracked) {
+    tracked = new Set();
+    effectToDeps.set(activeEffect, tracked);
+  }
+  tracked.add({ target, prop });
+};
+
+export const trigger = (target: object, prop: string) => {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) return;
+  const deps = depsMap.get(prop);
+  if (!deps) return;
+  const toRun = [...deps];
+  for (const fn of toRun) fn();
+};
+
 export const getProxy = (target: object): object | undefined => proxyByTarget.get(target);
+
+// ============= COMPUTED =============
+
+/**
+ * Creates a derived reactive value that caches its result and only
+ * re-evaluates when its tracked dependencies change.
+ *
+ * The getter is evaluated lazily — only on first `.value` read.
+ * Dependencies are auto-tracked during getter execution (no explicit dep arrays).
+ *
+ * The returned ref is compatible with `watch()` and template bindings
+ * (detected via `isHook`).
+ *
+ * @example
+ * ```ts
+ * const count = createHook(0);
+ * const doubled = computed(() => count.value * 2);
+ * // doubled.value → 0
+ * count.value = 5;
+ * // doubled.value → 10
+ *
+ * // Works in templates
+ * // render(html`<div :text=${doubled}></div>`)
+ * ```
+ */
+export const computed = <T>(getter: () => T) => {
+  let cachedValue: T;
+  let dirty = true;
+  const target = {};
+  HookRegistry.set(target, { listeners: new Map() });
+
+  const compute = () => {
+    const oldValue = cachedValue;
+    cleanupEffect(compute);
+    pushEffect(compute);
+    try {
+      cachedValue = getter();
+    } finally {
+      popEffect();
+    }
+    dirty = false;
+
+    if (oldValue !== cachedValue) {
+      const data = HookRegistry.get(target);
+      if (data) {
+        const callbacks = data.listeners.get("value");
+        if (callbacks) {
+          for (const fn of callbacks) fn(cachedValue, {});
+        }
+      }
+      trigger(target, "value");
+    }
+  };
+
+  const ref = {
+    [HOOK_TARGET]: target,
+    [HOOK_DATA]: {
+      prop: "value",
+      transform: null,
+      get value() {
+        if (dirty) compute();
+        return cachedValue;
+      },
+    },
+    get value() {
+      if (dirty) compute();
+      track(target, "value");
+      return cachedValue;
+    },
+  };
+
+  return ref;
+};
 
 export const createHook = <T extends any>(value: T, seal = true): HookState<NormalizedState<T>> => {
   let obj: any = isPlainObject(value) ? value : { value };
@@ -93,6 +224,7 @@ const getter = (target: any, rawProp: string | symbol, receiver: any): any => {
     return createHookRef(target, prop, target[prop]);
   }
 
+  track(target, prop);
   return Reflect.get(target, prop, receiver);
 };
 
@@ -102,6 +234,8 @@ const setter = (target: any, prop: string | symbol, value: any, receiver: any): 
   }
 
   const result = Reflect.set(target, prop, value, receiver);
+
+  trigger(target, prop);
 
   const data = HookRegistry.get(target);
   if (data) {
@@ -123,6 +257,9 @@ export const watch = <V>(
 ): (() => void) => {
   if (!isHook(value)) throw new TypeError("value must be a hook");
   const hook = value as any;
+
+  // Force initial value resolution (triggers lazy computed init)
+  void hook[HOOK_DATA].value;
 
   const data = HookRegistry.get(hook[HOOK_TARGET]);
   if (!data) throw new Error("Hook target registry entry not found");
