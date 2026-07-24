@@ -35,12 +35,15 @@ Always run `pnpm format && pnpm lint` after making code changes.
 | Concept | Description | Docs |
 |---|---|---|
 | `createHook` | ES6 Proxy-based reactive state with pub/sub | [`docs/reactivity/create-hook.md`](docs/reactivity/create-hook.md) |
+| `computed()` | Derived reactive value (lazy, cached, auto-tracked deps) | [`docs/reactivity/computed.md`](docs/reactivity/computed.md) |
+| `effect()` | Auto-tracking side effect (immediate, re-runs on dep change) | [`docs/reactivity/effect.md`](docs/reactivity/effect.md) |
+| `track()` / `trigger()` | Internal dependency tracking primitives (WeakMap-based) | `src/hooks.ts` |
 | `$`-prefixed access | Returns a `HookRef` (callable proxy) | [`docs/reactivity/create-hook.md`](docs/reactivity/create-hook.md) |
 | Traps | `store.$prop(fn)` — transform the value reactively; `isHook()` detects these | [`docs/reactivity/create-hook.md#traps--transforms`](docs/reactivity/create-hook.md#traps--transforms) |
 | methodForwarder | `.map()`, `.filter()`, `.toUpperCase()` on `$` refs chain as transforms | [`docs/reactivity/method-forwarding.md`](docs/reactivity/method-forwarding.md) |
 | Chaining | Trap results are callable: `store.$items((i) => i.length)((n) => n > 2)` | |
 | `html` tag | Tagged template → `Template` object with placeholder IDs | [`docs/templates/html-tag.md`](docs/templates/html-tag.md) |
-| `render` | Parses template, runs pipeline (`resolveBody` → `resolveAttributes` → components) | [`docs/templates/render.md`](docs/templates/render.md) |
+| `render` / `mount` | `render(template)` → DocumentFragment (pure); `mount(fragment, target)` → DOM (side effect) | [`docs/templates/render.md`](docs/templates/render.md) |
 | Pipeline | The full resolve chain order | [`docs/pipeline.md`](docs/pipeline.md) |
 | Directives | `:text`, `:html`, `:show`, `:children`, `class:`, `style:`, `on*` events, etc. | [`docs/directives/overview.md`](docs/directives/overview.md) |
 | Components | `defineComponent("tag-name", (props, slots) => Template)` | [`docs/components/define-component.md`](docs/components/define-component.md) |
