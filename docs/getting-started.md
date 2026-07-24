@@ -3,15 +3,13 @@
 ## Installation
 
 ```bash
-pnpm add croft
-# or
-npm install croft
+npm install @lemonadee/croft
 ```
 
 ## Quick Start
 
 ```typescript
-import Croft, { html, render, mount, createHook } from "croft";
+import { html, render, mount, createHook } from "@lemonadee/croft";
 
 // 1. Create a reactive state hook
 const state = createHook({

@@ -16,7 +16,7 @@ When elements are **removed**:
 ## Enable / Disable
 
 ```typescript
-import Croft, { enableLifecycle, disableLifecycle } from "croft";
+import Croft, { enableLifecycle, disableLifecycle } from "@lemonadee/croft";
 
 // Enable (automatic in browser)
 enableLifecycle();
@@ -30,7 +30,7 @@ disableLifecycle();
 Lifecycles are automatically disabled when Croft is imported in a non-browser environment (e.g., Node.js for SSR or testing). You can manually enable them if needed:
 
 ```typescript
-import { enableLifecycle } from "croft";
+import { enableLifecycle } from "@lemonadee/croft";
 
 if (typeof document !== "undefined") {
   enableLifecycle();

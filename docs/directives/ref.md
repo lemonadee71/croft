@@ -14,7 +14,7 @@ applyProps(element, { _ref: myRef });
 ## Example
 
 ```typescript
-import { createHook } from "croft";
+import { createHook } from "@lemonadee/croft";
 
 const inputRef = { current: null as HTMLInputElement | null };
 

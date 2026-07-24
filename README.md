@@ -11,11 +11,11 @@ A lightweight, decoupled, native DOM reactive templating engine.
 ## Quick Start
 
 ```bashpa
-npm install croft
+npm install @lemonadee/croft
 ```
 
 ```typescript
-import { html, render, mount, createHook, computed, effect } from "croft";
+import { html, render, mount, createHook, computed, effect } from "@lemonadee/croft";
 
 const state = createHook({ count: 0, items: ["Apple", "Banana"] });
 

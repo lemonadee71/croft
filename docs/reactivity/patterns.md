@@ -64,7 +64,7 @@ Use traps, `computed()`, or `watch()` instead.
 A `computed()` auto-tracks every dependency it reads during evaluation, and re-runs only when **any** of them changes. It also caches — redundant reads return the last value without re-computing:
 
 ```typescript
-import { createHook, computed } from "croft";
+import { createHook, computed } from "@lemonadee/croft";
 
 const state = createHook({ todos: [], filter: "all" });
 
@@ -184,7 +184,7 @@ function reset() {
 For side effects that react to state changes, use `effect()`:
 
 ```typescript
-import { createHook, effect } from "croft";
+import { createHook, effect } from "@lemonadee/croft";
 
 const state = createHook({ todos: [], filter: "all" });
 

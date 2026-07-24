@@ -13,7 +13,7 @@ Returns a `Template` object that can be passed to `render()`.
 ## Basic Syntax
 
 ```typescript
-import { html } from "croft";
+import { html } from "@lemonadee/croft";
 
 const template = html`
   <div class="container">

@@ -68,7 +68,7 @@ Lifecycles are powered by a `MutationObserver` on `document.body`. When elements
 ## Disabling Lifecycles
 
 ```typescript
-import Croft from "croft";
+import Croft from "@lemonadee/croft";
 
 Croft.disableLifecycle();
 

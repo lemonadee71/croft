@@ -80,20 +80,35 @@ Array methods like `.push()` mutate in-place and won't trigger reactivity. Alway
 
 ## Nested Objects
 
-Nested objects are also proxied:
+The `$` proxy only applies to **top-level** properties. Nested objects are not deeply proxied — they're returned as raw values:
 
 ```typescript
 const state = createHook({
   user: { name: "Alice", settings: { theme: "dark" } },
 });
 
-// Reactive reference to nested property
+// ❌ Does NOT work — $theme on a raw nested object, not a HookRef
 html`<div>${state.$user.settings.$theme}</div>`;
 
+// ✅ Works — access top-level $ ref directly
+html`<div>${state.$user}</div>`;
+
+// To reactively update a nested value, replace the top-level property:
 state.user = { ...state.user, settings: { theme: "light" } };
 ```
 
-However, for deeply nested reactivity, you may want to flatten your state or create separate hooks for different concerns.
+For deeply nested reactivity, flatten your state or create separate hooks:
+
+```typescript
+// Option A: flatten
+const state = createHook({ userName: "Alice", theme: "dark" });
+html`<div>${state.$theme}</div>`;
+
+// Option B: separate hooks
+const user = createHook({ name: "Alice" });
+const prefs = createHook({ theme: "dark" });
+html`<div>${prefs.$theme}</div>`;
+```
 
 ## Traps / Transforms
 

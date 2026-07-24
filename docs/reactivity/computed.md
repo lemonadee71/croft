@@ -16,7 +16,7 @@ The returned ref is compatible with `watch()`, `effect()`, and template bindings
 ## Basic Usage
 
 ```typescript
-import { createHook, computed, effect } from "croft";
+import { createHook, computed, effect } from "@lemonadee/croft";
 
 const count = createHook(0);
 
@@ -33,7 +33,7 @@ console.log(doubled.value); // 10 (auto-re-evaluated)
 ## With Templates
 
 ```typescript
-import { html, render, mount, createHook, computed } from "croft";
+import { html, render, mount, createHook, computed } from "@lemonadee/croft";
 
 const state = createHook({ name: "World" });
 const greeting = computed(() => "Hello, " + state.name + "!");
@@ -46,7 +46,7 @@ state.name = "Croft"; // DOM updates to "Hello, Croft!"
 ## With watch
 
 ```typescript
-import { createHook, computed, watch } from "croft";
+import { createHook, computed, watch } from "@lemonadee/croft";
 
 const state = createHook({ count: 0 });
 const doubled = computed(() => state.count * 2);
@@ -61,7 +61,7 @@ state.count = 5; // Logs: "doubled: 10"
 ## With effect
 
 ```typescript
-import { createHook, computed, effect } from "croft";
+import { createHook, computed, effect } from "@lemonadee/croft";
 
 const state = createHook({ a: 1, b: 2 });
 const sum = computed(() => state.a + state.b);

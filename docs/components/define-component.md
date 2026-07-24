@@ -19,7 +19,7 @@ type ComponentRenderer<P> = (
 ## Basic Component
 
 ```typescript
-import { defineComponent, html } from "croft";
+import { defineComponent, html } from "@lemonadee/croft";
 
 defineComponent("my-greeting", (props, slots) => {
   return html`<h1>Hello, ${props.name}!</h1>`;
@@ -55,7 +55,7 @@ defineComponent<ButtonProps>("my-button", (props, slots) => {
 Components can also be registered in groups via the plugin mount system:
 
 ```typescript
-import Croft from "croft";
+import Croft from "@lemonadee/croft";
 
 Croft.mount("components", {
   "my-button": (props: any) =>
@@ -68,7 +68,7 @@ Croft.mount("components", {
 ## removeComponent
 
 ```typescript
-import { removeComponent } from "croft";
+import { removeComponent } from "@lemonadee/croft";
 
 removeComponent("my-greeting");
 ```

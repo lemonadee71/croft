@@ -23,6 +23,8 @@ export default defineConfig({
         text: "Reactivity",
         items: [
           { text: "createHook", link: "/reactivity/create-hook" },
+          { text: "computed", link: "/reactivity/computed" },
+          { text: "effect", link: "/reactivity/effect" },
           { text: "Method Forwarding", link: "/reactivity/method-forwarding" },
           { text: "watch / unwatch", link: "/reactivity/watch" },
           { text: "Patterns", link: "/reactivity/patterns" },

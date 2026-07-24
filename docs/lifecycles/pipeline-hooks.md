@@ -14,7 +14,7 @@ Hook into the template compilation pipeline with lifecycle callbacks.
 ## API
 
 ```typescript
-import Croft from "croft";
+import Croft from "@lemonadee/croft";
 
 // Register
 Croft.onLifecycle("beforeCreate", (htmlString: string) => {

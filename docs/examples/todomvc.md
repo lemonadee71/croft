@@ -2,7 +2,8 @@
 
 This example demonstrates a full TodoMVC implementation built with Croft, showcasing:
 
-- **createHook** for reactive todo state and localStorage persistence
+- **createHook** for reactive todo state
+- **computed()** for multi-source derived state with caching
 - **html** template with reactive references and conditional rendering
 - **Directives** for class toggling, conditional visibility, event handlers
 - **defineComponent** for reusable UI components
@@ -29,37 +30,128 @@ example/
 
 ## Store
 
-The store uses `createHook` with immutable updates and `watch` for cross-property derived state and localStorage persistence:
+The store uses `createHook` for raw state, `computed()` for derived values, and `watch()` for localStorage persistence:
 
 ```typescript
-const store = createHook({
-  todos: [],
-  filter: "all",
-  filteredTodos: [],
-});
+import { createHook, watch, computed } from "@lemonadee/croft";
+
+const store = createHook({ todos: [], filter: "all" });
 
 // Persistence
-watch(store.$todos, saveTodos);
+watch(store.$todos, (todos) => {
+  localStorage.setItem("todos-croft", JSON.stringify(todos));
+});
 
-// Derived: recompute filteredTodos when todos or filter change
-function updateFiltered(_value: any, state: Record<string, any>) {
-  const { todos, filter } = state;
-  if (filter === "active") store.filteredTodos = todos.filter((t) => !t.completed);
-  else if (filter === "completed") store.filteredTodos = todos.filter((t) => t.completed);
-  else store.filteredTodos = todos;
+// Multi-source derived with auto-tracking and caching
+export const filteredTodos = computed(() => {
+  if (store.filter === "active") return store.todos.filter((t) => !t.completed);
+  if (store.filter === "completed") return store.todos.filter((t) => t.completed);
+  return store.todos;
+});
+
+export const allCompleted = computed(
+  () => store.todos.length > 0 && store.todos.every((t) => t.completed),
+);
+
+export const hasTodos = computed(() => store.todos.length > 0);
+```
+
+Mutators are exported as plain functions — components never mutate state directly:
+
+```typescript
+export function addTodo(title: string): void {
+  store.todos = [...store.todos, { id: uid(), title, completed: false }];
 }
-watch(store.$todos, updateFiltered);
-watch(store.$filter, updateFiltered);
+
+export function toggleTodo(id: string): void {
+  store.todos = store.todos.map((t) =>
+    t.id === id ? { ...t, completed: !t.completed } : t,
+  );
+}
+```
+
+## Components
+
+### todo-app
+
+```typescript
+import { store, filteredTodos, allCompleted, hasTodos, addTodo, ... } from "../store";
+
+defineComponent("todo-app", () => {
+  // Render-bound computed wraps the filter + map
+  const todoItems = computed(() => filteredTodos.value.map(renderItem));
+
+  function renderItem(todo: Todo) {
+    return html`
+      <li class:completed=${todo.completed} :key=${todo.id}>
+        <div class="view">
+          <input class="toggle" type="checkbox" checked=${todo.completed}
+            onChange=${() => toggleTodo(todo.id)} />
+          <label>${todo.title}</label>
+          <button class="destroy" onClick=${() => destroyTodo(todo.id)}></button>
+        </div>
+      </li>
+    `;
+  }
+
+  return html`
+    <section class="main" :show=${hasTodos}>
+      <input class="toggle-all" type="checkbox" checked=${allCompleted} />
+      <ul class="todo-list">${todoItems}</ul>
+    </section>
+    <todo-footer></todo-footer>
+  `;
+});
+```
+
+### todo-footer
+
+Uses `computed()` for all display values — no trap-based derivations:
+
+```typescript
+import { computed } from "@lemonadee/croft";
+import { store, hasTodos, clearCompleted } from "../store";
+
+defineComponent("todo-footer", () => {
+  const activeCount = computed(
+    () => store.todos.filter((t) => !t.completed).length,
+  );
+  const completedCount = computed(
+    () => store.todos.filter((t) => t.completed).length,
+  );
+  const hasCompleted = computed(() => completedCount.value > 0);
+  const itemLabel = computed(() => (activeCount.value === 1 ? "item" : "items"));
+  const isFilterAll = computed(() => store.filter === "all");
+  const isFilterActive = computed(() => store.filter === "active");
+  const isFilterCompleted = computed(() => store.filter === "completed");
+
+  return html`
+    <footer class="footer" :show=${hasTodos}>
+      <span class="todo-count">
+        <strong>${activeCount}</strong> ${itemLabel} left
+      </span>
+      <ul class="filters">
+        <li><a class:selected=${isFilterAll} href="#/">All</a></li>
+        <li><a class:selected=${isFilterActive} href="#/active">Active</a></li>
+        <li><a class:selected=${isFilterCompleted} href="#/completed">Completed</a></li>
+      </ul>
+      <button class="clear-completed" :show=${hasCompleted} onClick=${clearCompleted}>
+        Clear completed
+      </button>
+    </footer>
+  `;
+});
 ```
 
 ## Key Patterns
 
 | Requirement | Croft Feature |
 |---|---|
-| Conditional section visibility | `:show=${hasTodos}` with a trap: `store.$todos((t) => t.length > 0)` |
+| Conditional section visibility | `:show=${hasTodos}` — `computed()` bound directly |
 | Class toggling | `class:completed=${todo.completed}` |
 | Event handling | `onKeydown=${handler}`, `onDblclick=${handler}` |
-| List rendering | `${store.$filteredTodos.map(todo => renderItem(todo))}` (body placement) |
+| List rendering | `computed(() => filtered.value.map(renderItem))` in component body |
+| Multi-source derived state | `computed()` (auto-tracks `todos` + `filter`) |
 | Hash routing | `hashchange` event → `store.filter` |
 | localStorage | `watch(store.$todos, ...)` |
 

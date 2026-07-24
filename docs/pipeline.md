@@ -57,7 +57,7 @@ Registered custom components (`defineComponent`) are resolved top-down. Each com
 You can create reusable pipeline functions:
 
 ```typescript
-import { createElementFromTemplate } from "croft";
+import { createElementFromTemplate } from "@lemonadee/croft";
 
 const fragment = createElementFromTemplate(template);
 // fragment is now fully compiled and ready to mount

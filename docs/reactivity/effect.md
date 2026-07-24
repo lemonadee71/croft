@@ -14,7 +14,7 @@ function effect(fn: () => void): () => void
 ## Basic Usage
 
 ```typescript
-import { createHook, effect } from "croft";
+import { createHook, effect } from "@lemonadee/croft";
 
 const state = createHook({ count: 0, label: "tick" });
 
@@ -36,7 +36,7 @@ state.count = 2; // nothing logged
 ## With Computed
 
 ```typescript
-import { createHook, computed, effect } from "croft";
+import { createHook, computed, effect } from "@lemonadee/croft";
 
 const state = createHook({ items: [1, 2, 3] });
 const total = computed(() => state.items.reduce((a, b) => a + b, 0));

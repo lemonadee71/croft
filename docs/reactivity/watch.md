@@ -16,7 +16,7 @@ function unwatch<T>(ref: HookRef<T>, callback: (newValue: T, state: Record<strin
 ## Basic Usage
 
 ```typescript
-import { createHook, watch } from "croft";
+import { createHook, watch } from "@lemonadee/croft";
 
 const state = createHook({ count: 0 });
 

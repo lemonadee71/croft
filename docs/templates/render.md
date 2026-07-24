@@ -16,7 +16,7 @@ Use `mount(fragment, target)` to append the fragment to the DOM (see below).
 ## Basic Usage
 
 ```typescript
-import { html, render, mount } from "croft";
+import { html, render, mount } from "@lemonadee/croft";
 
 const template = html`<h1>Hello, World!</h1>`;
 const fragment = render(template);
@@ -46,7 +46,7 @@ mount(fragment, "body");
 Croft templates are compiled once and mounted. To update content, use reactive references inside the template rather than re-rendering:
 
 ```typescript
-import { html, render, mount } from "croft";
+import { html, render, mount } from "@lemonadee/croft";
 
 const state = createHook({ time: new Date().toLocaleTimeString() });
 

@@ -5,7 +5,7 @@ Croft has a simple plugin system for grouping related functionality.
 ## Plugin Mount
 
 ```typescript
-import Croft from "croft";
+import Croft from "@lemonadee/croft";
 
 Croft.mount("my-plugin", {
   // Components
@@ -60,7 +60,7 @@ For distribution, export a function that accepts Croft:
 
 ```typescript
 // my-plugin.ts
-import type Croft from "croft";
+import type Croft from "@lemonadee/croft";
 
 export function myPlugin(croft: typeof Croft, options: MyOptions) {
   croft.mount("my-plugin", {
@@ -76,7 +76,7 @@ export function myPlugin(croft: typeof Croft, options: MyOptions) {
 }
 
 // Usage:
-import Croft from "croft";
+import Croft from "@lemonadee/croft";
 import { myPlugin } from "my-plugin";
 
 myPlugin(Croft, { prefix: ">>" });

@@ -15,7 +15,7 @@ Croft.addDirective({
 ## Simple Custom Directive
 
 ```typescript
-import Croft from "croft";
+import Croft from "@lemonadee/croft";
 
 Croft.addDirective({
   type: "tooltip",
