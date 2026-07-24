@@ -1,4 +1,4 @@
-import { createHook, watch, unwatch, computed } from "./hooks";
+import { createHook, watch, unwatch, computed, effect } from "./hooks";
 import { addDirective, removeDirective } from "./directives";
 import { defineComponent, removeComponent } from "./components";
 import {
@@ -56,6 +56,7 @@ export {
   processDirectives,
   createHook,
   computed,
+  effect,
   watch,
   unwatch,
   modifyElement,

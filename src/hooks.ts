@@ -157,6 +157,44 @@ export const computed = <T>(getter: () => T) => {
   return ref;
 };
 
+// ============= EFFECT =============
+
+/**
+ * Runs a function immediately and automatically re-runs it whenever
+ * its reactive dependencies change.
+ *
+ * Dependencies are tracked during execution — no explicit dep arrays.
+ * Each run re-collects dependencies from scratch (handles dynamic branching).
+ *
+ * Returns a disposer function to stop tracking and clean up.
+ *
+ * @example
+ * ```ts
+ * const state = createHook({ count: 0 });
+ * const dispose = effect(() => console.log(state.count));
+ * // Logs: 0
+ * state.count = 1;
+ * // Logs: 1
+ * dispose();
+ * state.count = 2;
+ * // Nothing logged
+ * ```
+ */
+export const effect = (fn: () => void): (() => void) => {
+  const run = () => {
+    cleanupEffect(run);
+    pushEffect(run);
+    try {
+      fn();
+    } finally {
+      popEffect();
+    }
+  };
+
+  run();
+  return () => cleanupEffect(run);
+};
+
 export const createHook = <T extends any>(value: T, seal = true): HookState<NormalizedState<T>> => {
   let obj: any = isPlainObject(value) ? value : { value };
   obj = seal ? Object.seal(obj) : obj;

@@ -1,4 +1,4 @@
-import { applyProps, html, createHook, computed, watch, unwatch } from "../src";
+import { applyProps, html, createHook, computed, effect, watch, unwatch } from "../src";
 import { isHook } from "../src/utils";
 import { renderToBody as render, getTarget, useTestScope } from "./utils";
 
@@ -448,5 +448,113 @@ describe("computed", () => {
     state.count = 5;
     expect(fn).toHaveBeenCalledWith(10, expect.any(Object));
     expect(doubled.value).toBe(10);
+  });
+});
+
+describe("effect", () => {
+  it("runs immediately", () => {
+    const fn = vi.fn();
+    effect(fn);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-runs when a dependency changes", () => {
+    const state = createHook({ count: 0 });
+    const fn = vi.fn(() => state.count);
+    effect(fn);
+
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveReturnedWith(0);
+
+    state.count = 5;
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveReturnedWith(5);
+  });
+
+  it("does not re-run after disposer is called", () => {
+    const state = createHook({ count: 0 });
+    const fn = vi.fn(() => state.count);
+    const dispose = effect(fn);
+
+    expect(fn).toHaveBeenCalledTimes(1);
+
+    dispose();
+    state.count = 5;
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("tracks dependencies dynamically (handles branching)", () => {
+    const state = createHook({ show: true, name: "Alice", age: 30 });
+    const fn = vi.fn(() => {
+      if (state.show) {
+        void state.name;
+      } else {
+        void state.age;
+      }
+    });
+    effect(fn);
+    expect(fn).toHaveBeenCalledTimes(1);
+
+    // change name while show=true → re-runs
+    state.name = "Bob";
+    expect(fn).toHaveBeenCalledTimes(2);
+
+    // change age while show=true → does NOT re-run (not a dep)
+    state.age = 35;
+    expect(fn).toHaveBeenCalledTimes(2);
+
+    // switch show → re-runs, now depends on age instead of name
+    state.show = false;
+    expect(fn).toHaveBeenCalledTimes(3);
+
+    // now age is a dep → re-runs
+    state.age = 40;
+    expect(fn).toHaveBeenCalledTimes(4);
+
+    // name is no longer a dep → does not re-run
+    state.name = "Charlie";
+    expect(fn).toHaveBeenCalledTimes(4);
+  });
+
+  it("can track computed dependencies", () => {
+    const state = createHook({ count: 0 });
+    const doubled = computed(() => state.count * 2);
+    const fn = vi.fn(() => doubled.value);
+    effect(fn);
+
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveReturnedWith(0);
+
+    state.count = 3;
+    expect(fn).toHaveBeenCalledTimes(2);
+    expect(fn).toHaveReturnedWith(6);
+  });
+
+  it("dispose removes effect from all dep sets", () => {
+    const state = createHook({ a: 1, b: 2 });
+    const fn = vi.fn(() => state.a + state.b);
+    const dispose = effect(fn);
+
+    dispose();
+
+    state.a = 10;
+    state.b = 20;
+    // Should not have been re-run after dispose
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it("cleanup on dispose does not affect other effects watching the same dep", () => {
+    const state = createHook({ x: 0 });
+    const fn1 = vi.fn(() => state.x);
+    const fn2 = vi.fn(() => state.x);
+
+    const dispose1 = effect(fn1);
+    effect(fn2);
+
+    dispose1();
+
+    state.x = 5;
+    expect(fn1).toHaveBeenCalledTimes(1); // disposed — not re-run
+    expect(fn2).toHaveBeenCalledTimes(2); // still active — re-run
   });
 });
