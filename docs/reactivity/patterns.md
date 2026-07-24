@@ -138,3 +138,56 @@ function reset() {
   state.name = initial.name;
 }
 ```
+
+## Derived State with computed
+
+For reusable derived state that needs caching, use `computed()`:
+
+```typescript
+import { createHook, computed } from "croft";
+
+const state = createHook({ todos: [], filter: "all" });
+
+const visibleTodos = computed(() => {
+  if (state.filter === "all") return state.todos;
+  return state.todos.filter(t =>
+    state.filter === "active" ? !t.completed : t.completed
+  );
+});
+
+// Use in templates — reactive and cached
+// render(html`<ul>${visibleTodos.value.map(t => html`<li>...</li>`)}</ul>`)
+```
+
+See the full [`computed` docs](/reactivity/computed).
+
+## Side Effects with effect
+
+For side effects that react to state changes, use `effect()`:
+
+```typescript
+import { createHook, effect } from "croft";
+
+const state = createHook({ todos: [], filter: "all" });
+
+effect(() => {
+  // Auto-tracked — re-runs when todos or filter changes
+  const filtered = state.filter === "all"
+    ? state.todos
+    : state.todos.filter(t => !t.completed);
+
+  updateUI(filtered);
+});
+```
+
+See the full [`effect` docs](/reactivity/effect).
+
+## Choosing the Right Tool
+
+| Task | Tool |
+|------|------|
+| Render a derived value in a template | Trap on `$` ref |
+| Reusable derived state with caching | `computed()` |
+| Side effect that follows state | `effect()` |
+| Observe a specific ref for changes | `watch()` |
+| Complex logic with multiple deps | `effect()`

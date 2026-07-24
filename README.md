@@ -15,15 +15,22 @@ npm install croft
 ```
 
 ```typescript
-import { html, render, createHook } from "croft";
+import { html, render, mount, createHook, computed, effect } from "croft";
 
 const state = createHook({ count: 0, items: ["Apple", "Banana"] });
 
-render(html`
+const doubled = computed(() => state.count * 2);
+
+effect(() => {
+  console.log("Count is:", state.count);
+});
+
+mount(render(html`
   <h1>Counter: ${state.$count}</h1>
+  <p>Doubled: ${doubled}</p>
   <button onClick=${() => state.count++}>Increment</button>
   <ul>${state.$items.map((item) => html`<li>${item}</li>`)}</ul>
-`, "body");
+`), "body");
 ```
 
 ---

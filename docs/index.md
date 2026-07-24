@@ -17,7 +17,7 @@ Unlike traditional virtual DOM libraries, Croft uses native browser features, a 
 ## Quick Tour
 
 ```typescript
-import Croft, { html, render, createHook } from "croft";
+import Croft, { html, render, mount, createHook } from "croft";
 
 const state = createHook({ count: 0 });
 
@@ -28,7 +28,7 @@ const App = () => html`
   </div>
 `;
 
-render(App());
+mount(render(App()), "body");
 ```
 
 [Get Started →](/getting-started)

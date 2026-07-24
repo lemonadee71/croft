@@ -13,10 +13,18 @@ Creates a template from a tagged template literal.
 ### `render`
 
 ```typescript
-function render(template: Template, mount?: string | HTMLElement): DocumentFragment
+function render(template: Template): DocumentFragment
 ```
 
-Compiles and mounts a template to the DOM.
+Compiles a template into a `DocumentFragment`. Pure function — no side effects.
+
+### `mount`
+
+```typescript
+function mount(fragment: DocumentFragment, target: string | HTMLElement): void
+```
+
+Appends a rendered `DocumentFragment` to a DOM target. Separated from `render` to keep creation side-effect-free.
 
 ### `createElementFromTemplate`
 
@@ -79,6 +87,22 @@ function unwatch<T>(ref: HookRef<T>, callback: (value: T, state: Record<string, 
 ```
 
 Removes a watcher from a reactive reference.
+
+### `computed`
+
+```typescript
+function computed<T>(getter: () => T): ComputedRef<T>
+```
+
+Creates a derived reactive value. The getter is evaluated lazily — only on first `.value` read. Dependencies are auto-tracked. The result is cached until a dependency changes. Works in templates and with `watch()`.
+
+### `effect`
+
+```typescript
+function effect(fn: () => void): () => void
+```
+
+Runs a function immediately and re-runs it automatically whenever its reactive dependencies change. Dependencies are tracked during execution (no explicit dep arrays). Each run re-collects dependencies, handling dynamic branching. Returns a disposer function.
 
 ## Components
 

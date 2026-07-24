@@ -11,7 +11,7 @@ npm install croft
 ## Quick Start
 
 ```typescript
-import Croft, { html, render, createHook } from "croft";
+import Croft, { html, render, mount, createHook } from "croft";
 
 // 1. Create a reactive state hook
 const state = createHook({
@@ -32,7 +32,7 @@ const App = () => html`
 `;
 
 // 3. Render and mount to the body
-render(App());
+mount(render(App()), "body");
 ```
 
 Croft renders directly into native DOM — no virtual DOM, no diffing, no build step required.
