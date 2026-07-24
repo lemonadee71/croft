@@ -1,6 +1,6 @@
-import { createHook, watch, unwatch, type HookRef } from "./hooks";
+import { createHook, watch, unwatch } from "./hooks";
 import { addDirective, removeDirective } from "./directives";
-import { defineComponent, removeComponent, type ComponentRenderer } from "./components";
+import { defineComponent, removeComponent } from "./components";
 import {
   onLifecycle,
   removeLifecycle,
@@ -8,7 +8,7 @@ import {
   disableLifecycle,
   enableLifecycle,
 } from "./lifecycle";
-import { html, render } from "./renderer";
+import { html, render, mount } from "./renderer";
 import {
   applyProps,
   createElementFromTemplate,
@@ -50,6 +50,7 @@ try {
 export {
   html,
   render,
+  mount,
   applyProps,
   createElementFromTemplate,
   processDirectives,
@@ -61,7 +62,9 @@ export {
   removeComponent,
 };
 
-export type { ComponentRenderer, HookRef };
+export type { ComponentRenderer } from "./components";
+export type { HookRef } from "./hooks";
+export type { Directive, ModifyElementFn } from "./directives";
 
 /**
  * Global configuration and plugin entry point for croft.

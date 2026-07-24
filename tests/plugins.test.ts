@@ -1,4 +1,4 @@
-import PoorManJSX, { applyProps, html, render } from "../src";
+import PoorManJSX, { applyProps, html, render, mount } from "../src";
 import { screen } from "./utils";
 
 describe("runBeforeCreate", () => {
@@ -11,7 +11,7 @@ describe("runBeforeCreate", () => {
     const fn = vi.fn((str: string) => str.replace(/x-/g, "data-"));
 
     PoorManJSX.onLifecycle("beforeCreate", fn);
-    render(html`<div x-testid="preprocessed"></div>`, "body");
+    mount(render(html`<div x-testid="preprocessed"></div>`), "body");
 
     expect(fn).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId("preprocessed")).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe("addDirective", () => {
       match: attrName,
     });
 
-    render(html`<div :autosize data-testid="autosize"></div>`, "body");
+    mount(render(html`<div :autosize data-testid="autosize"></div>`), "body");
 
     runAssertions();
   });
@@ -56,9 +56,11 @@ describe("addDirective", () => {
       match: { attrName, objKey },
     });
 
-    render(
-      html`<div data-testid="autosize1"></div>
-        <div :autosize data-testid="autosize2"></div>`,
+    mount(
+      render(
+        html`<div data-testid="autosize1"></div>
+          <div :autosize data-testid="autosize2"></div>`
+      ),
       "body"
     );
     applyProps(screen.getByTestId("autosize1"), { autosize: true });
@@ -70,7 +72,7 @@ describe("addDirective", () => {
   it("uses strict equality if `predicate` is not provided", () => {
     PoorManJSX.addDirective(directive);
 
-    render(html`<div autosize data-testid="autosize"></div>`, "body");
+    mount(render(html`<div autosize data-testid="autosize"></div>`), "body");
 
     runAssertions();
   });

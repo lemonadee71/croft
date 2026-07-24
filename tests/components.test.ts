@@ -1,4 +1,11 @@
-import PoorManJSX, { html, render, defineComponent, removeComponent, createHook } from "../src";
+import PoorManJSX, {
+  html,
+  render,
+  mount,
+  defineComponent,
+  removeComponent,
+  createHook,
+} from "../src";
 import { useTestScope, screen } from "./utils";
 
 describe("component registration", () => {
@@ -19,7 +26,7 @@ describe("component registration", () => {
   });
 
   it("ignores slot attribute on regular elements outside components", () => {
-    render(html`<div slot="foo" data-testid="plain">text</div>`, "body");
+    mount(render(html`<div slot="foo" data-testid="plain">text</div>`), "body");
     const el = screen.getByTestId("plain");
     expect(el).toHaveAttribute("slot", "foo");
     expect(el).toHaveTextContent("text");
@@ -31,7 +38,7 @@ describe("component registration", () => {
       (props: any) => html`<span data-testid="counter">Count: ${props.initial}</span>`
     );
 
-    render(html`<my-counter initial="5" />`, "body");
+    mount(render(html`<my-counter initial="5" />`), "body");
 
     expect(screen.getByTestId("counter")).toHaveTextContent("Count: 5");
   });
@@ -43,8 +50,8 @@ describe("component registration", () => {
         html`<div data-testid="panel" class=${props.type}>${slots.default}</div>`
     );
 
-    render(
-      html`<my-panel type="primary"><span data-testid="child">Hello</span></my-panel>`,
+    mount(
+      render(html`<my-panel type="primary"><span data-testid="child">Hello</span></my-panel>`),
       "body"
     );
 
@@ -59,7 +66,7 @@ describe("component registration", () => {
     );
 
     const name = "World";
-    render(html`<my-greeting name=${name} />`, "body");
+    mount(render(html`<my-greeting name=${name} />`), "body");
 
     expect(screen.getByTestId("greeting")).toHaveTextContent("World");
   });
@@ -75,14 +82,14 @@ describe("component registration", () => {
       (_props: any, slots: any) => html`<div data-testid="card">${slots.default}</div>`
     );
 
-    render(html`<my-card><my-avatar label="User" /></my-card>`, "body");
+    mount(render(html`<my-card><my-avatar label="User" /></my-card>`), "body");
 
     expect(screen.getByTestId("card")).toBeInTheDocument();
     expect(screen.getByTestId("avatar")).toHaveTextContent("User");
   });
 
   it("leaves unregistered custom element tags in the DOM", () => {
-    render(html`<my-unknown data-testid="unknown">content</my-unknown>`, "body");
+    mount(render(html`<my-unknown data-testid="unknown">content</my-unknown>`), "body");
     const el = screen.getByTestId("unknown");
     expect(el).toBeInTheDocument();
     expect(el.tagName.toLowerCase()).toBe("my-unknown");
@@ -92,14 +99,14 @@ describe("component registration", () => {
   it("removeComponent prevents a component from rendering", () => {
     defineComponent("my-temp", () => html`<span data-testid="temp">Temporary</span>`);
 
-    render(html`<my-temp />`, "body");
+    mount(render(html`<my-temp />`), "body");
     expect(screen.getByTestId("temp")).toBeInTheDocument();
 
     removeComponent("my-temp");
 
     // Clear previous render output and re-render — tag should remain as unknown element
     document.body.innerHTML = "";
-    render(html`<my-temp />`, "body");
+    mount(render(html`<my-temp />`), "body");
     const els = document.body.querySelectorAll("my-temp");
     expect(els.length).toBe(1);
     expect(screen.queryByTestId("temp")).not.toBeInTheDocument();
@@ -111,7 +118,7 @@ describe("component registration", () => {
       (props: any) => html`<button data-testid="btn" class=${props.kind}>${props.label}</button>`
     );
 
-    render(html`<my-button kind="primary" label="Click" />`, "body");
+    mount(render(html`<my-button kind="primary" label="Click" />`), "body");
 
     expect(screen.getByTestId("btn")).toHaveClass("primary");
     expect(screen.getByTestId("btn")).toHaveTextContent("Click");
@@ -134,14 +141,14 @@ describe("complex component scenarios", () => {
         html`<span data-testid=${"badge-" + props.id} class=${props.variant}>${props.label}</span>`
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <div>
           <my-badge id="1" variant="info" label="New"></my-badge>
           <my-badge id="2" variant="warn" label="Pending"></my-badge>
           <my-badge id="3" variant="done" label="Completed"></my-badge>
         </div>
-      `,
+      `),
       "body"
     );
 
@@ -166,13 +173,13 @@ describe("complex component scenarios", () => {
       `
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <ul>
           <my-todo-item id="1" text="Write tests" done=${true}></my-todo-item>
           <my-todo-item id="2" text="Refactor code" done=${false}></my-todo-item>
         </ul>
-      `,
+      `),
       "body"
     );
 
@@ -205,14 +212,14 @@ describe("complex component scenarios", () => {
       `
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-todo-list
           title="Tasks"
           count=${3}
           items=${[html`<li key="a">Task A</li>`, html`<li key="b">Task B</li>`]}
         ></my-todo-list>
-      `,
+      `),
       "body"
     );
 
@@ -232,14 +239,14 @@ describe("complex component scenarios", () => {
     const container = document.createElement("div");
     document.body.append(container);
 
-    render(html`<my-greeting name=${state.$name}></my-greeting>`, container);
+    mount(render(html`<my-greeting name=${state.$name}></my-greeting>`), container);
 
     expect(screen.getByTestId("greeting")).toHaveTextContent("Hello, Alice!");
 
     state.name = "Bob";
     container.innerHTML = "";
 
-    render(html`<my-greeting name=${state.$name}></my-greeting>`, container);
+    mount(render(html`<my-greeting name=${state.$name}></my-greeting>`), container);
 
     expect(screen.getByTestId("greeting")).toHaveTextContent("Hello, Bob!");
   });
@@ -252,12 +259,12 @@ describe("complex component scenarios", () => {
       (_props: any, slots: any) => html`<div data-testid="card">${slots.default}</div>`
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-card>
           <button data-testid="btn" onClick=${onClick}>Action</button>
         </my-card>
-      `,
+      `),
       "body"
     );
 
@@ -278,14 +285,14 @@ describe("complex component scenarios", () => {
       `
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-split>
           <h1 slot="header">Title</h1>
           <p>Body content</p>
           <small slot="footer">Footer note</small>
         </my-split>
-      `,
+      `),
       "body"
     );
 
@@ -306,7 +313,7 @@ describe("complex component scenarios", () => {
       `
     );
 
-    render(html`<my-fallback></my-fallback>`, "body");
+    mount(render(html`<my-fallback></my-fallback>`), "body");
 
     expect(screen.getByTestId("fallback")).toContainHTML("<h1>Default Header</h1>");
     expect(screen.getByTestId("fallback")).toContainHTML("<p>Default body</p>");
@@ -323,13 +330,13 @@ describe("complex component scenarios", () => {
       `
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-fallback>
           <h2 slot="header">Custom Title</h2>
           <span>Custom body</span>
         </my-fallback>
-      `,
+      `),
       "body"
     );
 
@@ -344,11 +351,13 @@ describe("complex component scenarios", () => {
       return html`<span data-testid="count">${slots.default ? slots.default.length : 0}</span>`;
     });
 
-    render(
-      html`<my-inspector
-        ><p>A</p>
-        <p>B</p></my-inspector
-      >`,
+    mount(
+      render(
+        html`<my-inspector
+          ><p>A</p>
+          <p>B</p></my-inspector
+        >`
+      ),
       "body"
     );
 
@@ -361,13 +370,13 @@ describe("complex component scenarios", () => {
       (_props: any, _slots: any) => html`<slot name="a"></slot><slot name="b"></slot>`
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-skinny>
           <span slot="a" data-testid="a">A</span>
           <span slot="b" data-testid="b">B</span>
         </my-skinny>
-      `,
+      `),
       "body"
     );
 
@@ -387,7 +396,7 @@ describe("complex component scenarios", () => {
         </div>`
     );
 
-    render(html`<my-layout><p>body</p></my-layout>`, "body");
+    mount(render(html`<my-layout><p>body</p></my-layout>`), "body");
 
     expect(screen.getByTestId("layout")).toContainHTML("<h1>Default Title</h1>");
     expect(screen.getByTestId("layout")).toHaveTextContent("body");
@@ -403,7 +412,7 @@ describe("complex component scenarios", () => {
         </div>`
     );
 
-    render(html`<my-empty></my-empty>`, "body");
+    mount(render(html`<my-empty></my-empty>`), "body");
 
     expect(screen.getByTestId("empty").querySelector("slot")).toBeNull();
     expect(screen.getByTestId("empty")).toHaveTextContent("content");
@@ -420,7 +429,7 @@ describe("complex component scenarios", () => {
       (_props: any, slots: any) => html`<div data-testid="box">${slots.default}</div>`
     );
 
-    render(html`<my-box><my-label text="nested" /></my-box>`, "body");
+    mount(render(html`<my-box><my-label text="nested" /></my-box>`), "body");
 
     expect(screen.getByTestId("box")).toBeInTheDocument();
     expect(screen.getByTestId("label")).toHaveTextContent("nested");
@@ -435,12 +444,12 @@ describe("complex component scenarios", () => {
         html`<div data-testid="actions"><slot name="buttons"></slot></div>`
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-actions>
           <button slot="buttons" data-testid="btn" onClick=${onClick}>Go</button>
         </my-actions>
-      `,
+      `),
       "body"
     );
 
@@ -459,12 +468,12 @@ describe("complex component scenarios", () => {
       (_props: any, _slots: any) => html`<div data-testid="parent"><slot name="child"></slot></div>`
     );
 
-    render(
-      html`
+    mount(
+      render(html`
         <my-parent>
           <my-child slot="child" text="slotted" />
         </my-parent>
-      `,
+      `),
       "body"
     );
 
@@ -486,7 +495,7 @@ describe("direct component registration", () => {
       (props: any) => html`<h1 data-testid="header">${props.title}</h1>`
     );
 
-    render(html`<my-header title="Hello" />`, "body");
+    mount(render(html`<my-header title="Hello" />`), "body");
 
     expect(screen.getByTestId("header")).toHaveTextContent("Hello");
   });
@@ -506,7 +515,7 @@ describe("console warnings", () => {
   it("warns about unregistered custom elements", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    render(html`<my-unknown>content</my-unknown>`, "body");
+    mount(render(html`<my-unknown>content</my-unknown>`), "body");
 
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("my-unknown"));
 

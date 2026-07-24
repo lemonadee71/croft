@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/dom";
-import PoorManJSX, { render } from "../src";
+import PoorManJSX, { render, mount } from "../src";
 import { enableLifecycle, disableLifecycle } from "../src/lifecycle";
 
 export const defer = (fn: () => void): Promise<void> => {
@@ -15,7 +15,7 @@ export const defer = (fn: () => void): Promise<void> => {
   });
 };
 
-export const renderToBody = (template: any) => render(template, "body");
+export const renderToBody = (template: any) => mount(render(template), "body");
 
 export const getTarget = () => screen.getByTestId("target");
 

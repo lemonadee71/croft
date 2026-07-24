@@ -55,11 +55,32 @@ try {
   _document = document;
 } catch {}
 
+const destroyedNodes = new WeakSet<Node>();
+
 export const triggerLifecycle = (type: string, root: Element) => {
-  traverse(root, (node) => void node.dispatchEvent(new _Event(`@${type}`)));
+  if (type === "destroy") {
+    traverse(root, (node) => {
+      if (destroyedNodes.has(node)) return false;
+      destroyedNodes.add(node);
+      node.dispatchEvent(new _Event(`@${type}`));
+    });
+  } else if (type === "mount") {
+    traverse(root, (node) => {
+      destroyedNodes.delete(node);
+      node.dispatchEvent(new _Event(`@${type}`));
+    });
+  } else {
+    traverse(root, (node) => void node.dispatchEvent(new _Event(`@${type}`)));
+  }
 };
 
-const inDocument = (node: Node): boolean => !!_document?.body?.contains(node);
+const inDocument = (node: Node): boolean => {
+  const root = node.getRootNode();
+  return !!(
+    root instanceof Document ||
+    (root instanceof ShadowRoot && _document?.body?.contains(root.host))
+  );
+};
 
 export const mutationCallback = (mutations: MutationRecord[]) => {
   mutations.forEach((mutation) => {

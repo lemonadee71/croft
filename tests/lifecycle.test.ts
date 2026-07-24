@@ -1,5 +1,5 @@
 import { waitFor } from "@testing-library/dom";
-import { html, render } from "../src";
+import { html, render, mount } from "../src";
 import { enableLifecycle, disableLifecycle } from "../src/lifecycle";
 import { useTestScope, defer } from "./utils";
 
@@ -39,14 +39,14 @@ describe("lifecycle methods", () => {
   describe("@destroy", () => {
     it("runs when element is destroyed", async () => {
       const div = html`<div onDestroy=${onDestroy}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       document.body.lastElementChild!.remove();
       await waitFor(() => expect(onDestroy).toHaveBeenCalledTimes(1));
     });
 
     it("does not run when node is moved", async () => {
       const div = html`<div onDestroy=${onDestroy}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       const el = document.body.lastElementChild!;
       const extraEl = render(html`<div></div>`).firstElementChild!;
       document.body.append(extraEl);
@@ -54,20 +54,35 @@ describe("lifecycle methods", () => {
 
       await waitFor(() => expect(onDestroy).not.toHaveBeenCalled());
     });
+
+    it("fires again if node is destroyed, re-mounted, and destroyed again", async () => {
+      const div = html`<div onDestroy=${onDestroy}>Hello, World!</div>`;
+      mount(render(div), "body");
+
+      const el = document.body.lastElementChild!;
+      el.remove();
+      await waitFor(() => expect(onDestroy).toHaveBeenCalledTimes(1));
+
+      document.body.append(el);
+      await waitFor(() => {}); // let mount settle
+
+      el.remove();
+      await waitFor(() => expect(onDestroy).toHaveBeenCalledTimes(2));
+    });
   });
 
   describe("@load", () => {
     it("runs on mount", async () => {
       const div = html`<div onLoad=${onLoad}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       await waitFor(() => expect(onLoad).toHaveBeenCalledTimes(1));
     });
 
     it("does not run when node is moved", async () => {
       const div = html`<div onLoad=${onLoad}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       const el = document.body.lastElementChild!;
-      render(html`<div id="target"></div>`, "body");
+      mount(render(html`<div id="target"></div>`), "body");
 
       await defer(() => document.getElementById("target")!.append(el));
       await waitFor(() => expect(onLoad).toHaveBeenCalledTimes(1));
@@ -77,15 +92,15 @@ describe("lifecycle methods", () => {
   describe("@mount", () => {
     it("runs on mount", async () => {
       const div = html`<div onMount=${onMount}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       await waitFor(() => expect(onMount).toHaveBeenCalledTimes(1));
     });
 
     it("runs when node is moved", async () => {
       const div = html`<div onMount=${onMount}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       const el = document.body.lastElementChild!;
-      render(html`<div id="target"></div>`, "body");
+      mount(render(html`<div id="target"></div>`), "body");
 
       await defer(() => document.getElementById("target")!.append(el));
       await waitFor(() => expect(onMount).toHaveBeenCalledTimes(2));
@@ -95,14 +110,14 @@ describe("lifecycle methods", () => {
   describe("@unmount", () => {
     it("runs when element is destroyed", async () => {
       const div = html`<div onUnmount=${onUnmount}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       document.body.lastElementChild!.remove();
       await waitFor(() => expect(onUnmount).toHaveBeenCalledTimes(1));
     });
 
     it("runs when node is moved", async () => {
       const div = html`<div onUnmount=${onUnmount}>Hello, World!</div>`;
-      render(div, "body");
+      mount(render(div), "body");
       const el = document.body.lastElementChild!;
       const extraEl = render(html`<div></div>`).firstElementChild!;
       document.body.append(extraEl);
@@ -130,7 +145,7 @@ describe("lifecycle methods", () => {
     const mock = vi.fn();
     const div = html`<div onDestroy=${[onDestroy, mock] as any}>Hello, World!</div>`;
 
-    render(div, "body");
+    mount(render(div), "body");
     document.body.innerHTML = "";
 
     await waitFor(() => {
@@ -154,20 +169,20 @@ describe("enableLifecycle / disableLifecycle", () => {
   });
 
   it("prevents lifecycle events while disabled", async () => {
-    render(html`<div onMount=${onMount}>test</div>`, "body");
+    mount(render(html`<div onMount=${onMount}>test</div>`), "body");
     await waitFor(() => expect(onMount).toHaveBeenCalledTimes(0));
   });
 
   it("fires lifecycle events after re-enabling", async () => {
     enableLifecycle();
-    render(html`<div onMount=${onMount}>test</div>`, "body");
+    mount(render(html`<div onMount=${onMount}>test</div>`), "body");
     await waitFor(() => expect(onMount).toHaveBeenCalledTimes(1));
   });
 
   it("enableLifecycle is safe to call multiple times", async () => {
     enableLifecycle();
     enableLifecycle();
-    render(html`<div onMount=${onMount}>test</div>`, "body");
+    mount(render(html`<div onMount=${onMount}>test</div>`), "body");
     await waitFor(() => expect(onMount).toHaveBeenCalledTimes(1));
   });
 });

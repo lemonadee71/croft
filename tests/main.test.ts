@@ -4,6 +4,7 @@ import {
   createElementFromTemplate,
   createHook,
   html,
+  mount,
   processDirectives,
   render,
 } from "../src";
@@ -121,24 +122,24 @@ describe("functions", () => {
       expect(target()).toHaveTextContent("This is my div");
     });
 
-    it("accepts a second parameter `element` as HTMLElement", () => {
-      render(html`<div></div>`, document.body);
+    it("accepts a target as HTMLElement", () => {
+      mount(render(html`<div></div>`), document.body);
 
       expect(document.body).toContainHTML("<div></div>");
     });
 
-    it("accepts a second parameter `element` as string", () => {
-      render(html`<div></div>`, "body");
+    it("accepts a target as string selector", () => {
+      mount(render(html`<div></div>`), "body");
 
       expect(document.body).toContainHTML("<div></div>");
     });
 
-    it("throws an error if `element` is not an existing selector", () => {
-      expect(() => render(html`<div></div>`, "data-testid")).toThrowError();
+    it("throws an error if target is not an existing selector", () => {
+      expect(() => mount(render(html`<div></div>`), "data-testid")).toThrowError();
     });
 
-    it("throws an error if `element` is not a `Node`", () => {
-      expect(() => render(html`<div></div>`, {} as any)).toThrowError();
+    it("throws an error if target is not a `Node`", () => {
+      expect(() => mount(render(html`<div></div>`), {} as any)).toThrowError();
     });
   });
 

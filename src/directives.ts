@@ -24,6 +24,13 @@ type MatchRule =
 /**
  * Interface representing a custom directive plugin.
  */
+export type ModifyElementFn = (
+  target: Element | string,
+  type: string,
+  data: { key: any; value: any },
+  context?: Document | HTMLElement | DocumentFragment
+) => Element | null;
+
 export type Directive = {
   /** Registry key. Defaults to type. */
   name?: string;
@@ -43,7 +50,7 @@ export type Directive = {
    * @param data The payload containing `key` (arguments) and `value` (assigned value).
    * @param modify A utility to recursively modify the element.
    */
-  callback: (element: HTMLElement, data: { key: any; value: any }, modify: any) => void;
+  callback: (element: HTMLElement, data: { key: any; value: any }, modify: ModifyElementFn) => void;
 };
 
 export interface RegistryEntry {
@@ -52,7 +59,7 @@ export interface RegistryEntry {
     attrName: (key: string) => [string, string] | null;
     objKey: (key: string) => [string, string] | null;
   };
-  callback: (element: HTMLElement, data: { key: any; value: any }, modify: any) => void;
+  callback: (element: HTMLElement, data: { key: any; value: any }, modify: ModifyElementFn) => void;
 }
 
 export const DirectivesRegistry = new Map<string, RegistryEntry>();

@@ -39,20 +39,21 @@ export const html = (fragments: TemplateStringsArray, ...values: any[]): Templat
 };
 
 /**
- * Compiles a Template and attaches it to a target DOM node or selector.
+ * Compiles a Template into a DocumentFragment.
  */
-export const render = (template: Template, target?: string | HTMLElement): DocumentFragment => {
+export const render = (template: Template): DocumentFragment => {
   const fragment = createElementFromTemplate(template);
-
   resolveComponents(fragment, template.values);
-
-  if (target) {
-    const parent = isString(target) ? document.querySelector(target) : target;
-    if (!parent || !(parent instanceof HTMLElement)) {
-      throw new Error("Target is not a valid HTMLElement");
-    }
-    parent.append(fragment);
-  }
-
   return fragment;
+};
+
+/**
+ * Mounts a DocumentFragment into a target DOM node or selector.
+ */
+export const mount = (fragment: DocumentFragment, target: string | HTMLElement): void => {
+  const parent = isString(target) ? document.querySelector(target) : target;
+  if (!parent || !(parent instanceof HTMLElement)) {
+    throw new Error("Target is not a valid HTMLElement");
+  }
+  parent.append(fragment);
 };
