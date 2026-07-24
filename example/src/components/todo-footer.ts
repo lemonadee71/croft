@@ -1,18 +1,18 @@
-import { html, defineComponent } from "@lemonadee/croft";
+import { html, defineComponent, computed } from "@lemonadee/croft";
 import { store, hasTodos, clearCompleted } from "../store";
 
 defineComponent("todo-footer", () => {
-  const activeCount = store.$todos(
-    (todos) => todos.filter((t) => !t.completed).length,
+  const activeCount = computed(
+    () => store.todos.filter((t) => !t.completed).length,
   );
-  const completedCount = store.$todos(
-    (todos) => todos.filter((t) => t.completed).length,
+  const completedCount = computed(
+    () => store.todos.filter((t) => t.completed).length,
   );
-  const hasCompleted = completedCount((count) => count > 0);
-  const itemLabel = activeCount((count) => (count === 1 ? "item" : "items"));
-  const isFilterAll = store.$filter((f) => f === "all");
-  const isFilterActive = store.$filter((f) => f === "active");
-  const isFilterCompleted = store.$filter((f) => f === "completed");
+  const hasCompleted = computed(() => completedCount.value > 0);
+  const itemLabel = computed(() => (activeCount.value === 1 ? "item" : "items"));
+  const isFilterAll = computed(() => store.filter === "all");
+  const isFilterActive = computed(() => store.filter === "active");
+  const isFilterCompleted = computed(() => store.filter === "completed");
 
   return html`
     <footer class="footer" :show=${hasTodos}>

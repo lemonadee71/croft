@@ -1,6 +1,7 @@
-import { html, defineComponent } from "@lemonadee/croft";
+import { html, defineComponent, computed } from "@lemonadee/croft";
 import {
   store,
+  filteredTodos,
   allCompleted,
   hasTodos,
   addTodo,
@@ -69,6 +70,8 @@ defineComponent("todo-app", () => {
     input.addEventListener("keydown", onKeydown);
   }
 
+  const todoItems = computed(() => filteredTodos.value.map(renderItem));
+
   function renderItem(todo: Todo) {
     return html`
       <li class:completed=${todo.completed} :key=${todo.id}>
@@ -111,7 +114,7 @@ defineComponent("todo-app", () => {
         />
         <label for="toggle-all">Mark all as complete</label>
         <ul class="todo-list">
-          ${store.$filteredTodos.map(renderItem)}
+          ${todoItems}
         </ul>
       </section>
 

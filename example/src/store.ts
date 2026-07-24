@@ -1,4 +1,4 @@
-import { createHook, watch, type HookRef } from "@lemonadee/croft";
+import { createHook, watch, computed } from "@lemonadee/croft";
 
 export interface Todo {
   id: string;
@@ -22,10 +22,6 @@ function loadTodos(): Todo[] {
   }
 }
 
-function saveTodos(todos: Todo[]): void {
-  localStorage.setItem("todos-croft", JSON.stringify(todos));
-}
-
 // ---------- State ----------
 
 const initialTodos = loadTodos();
@@ -33,35 +29,27 @@ const initialTodos = loadTodos();
 export const store = createHook({
   todos: initialTodos,
   filter: "all" as Filter,
-  filteredTodos: initialTodos as Todo[],
 });
 
 // ---------- Persistence ----------
 
-watch(store.$todos, saveTodos);
+watch(store.$todos, (todos) => {
+  localStorage.setItem("todos-croft", JSON.stringify(todos));
+});
 
-// ---------- Derived (cross-property: depends on both todos and filter) ----------
+// ---------- Derived ----------
 
-function updateFiltered(_value: any, state: Record<string, any>) {
-  const { todos, filter } = state;
-  const filtered =
-    filter === "active"
-      ? todos.filter((t: Todo) => !t.completed)
-      : filter === "completed"
-        ? todos.filter((t: Todo) => t.completed)
-        : todos;
-  store.filteredTodos = filtered;
-}
+export const filteredTodos = computed(() => {
+  if (store.filter === "active") return store.todos.filter((t) => !t.completed);
+  if (store.filter === "completed") return store.todos.filter((t) => t.completed);
+  return store.todos;
+});
 
-watch(store.$todos, updateFiltered);
-watch(store.$filter, updateFiltered);
-
-// ---------- Derived (shared traps) ----------
-
-export const allCompleted: HookRef<boolean> = store.$todos(
-  (todos) => todos.length > 0 && todos.every((t) => t.completed)
+export const allCompleted = computed(
+  () => store.todos.length > 0 && store.todos.every((t) => t.completed),
 );
-export const hasTodos: HookRef<boolean> = store.$todos((todos) => todos.length > 0);
+
+export const hasTodos = computed(() => store.todos.length > 0);
 
 // ---------- Mutators ----------
 
@@ -72,7 +60,9 @@ export function addTodo(title: string): void {
 }
 
 export function toggleTodo(id: string): void {
-  store.todos = store.todos.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
+  store.todos = store.todos.map((t) =>
+    t.id === id ? { ...t, completed: !t.completed } : t,
+  );
 }
 
 export function destroyTodo(id: string): void {
@@ -85,7 +75,9 @@ export function editTodo(id: string, title: string): void {
     destroyTodo(id);
     return;
   }
-  store.todos = store.todos.map((t) => (t.id === id ? { ...t, title: trimmed } : t));
+  store.todos = store.todos.map((t) =>
+    t.id === id ? { ...t, title: trimmed } : t,
+  );
 }
 
 export function clearCompleted(): void {
